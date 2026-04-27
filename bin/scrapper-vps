@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Helper wrapper untuk interaksi dengan scrapper container di VPS via SSH.
+#
+# Setup (sekali):
+#   chmod +x bin/scrapper-vps
+#   export VPS_HOST=dios@182.23.12.142     # taruh di ~/.bashrc untuk persistent
+#
+# Usage:
+#   bin/scrapper-vps logs           # tail container logs realtime
+#   bin/scrapper-vps scrape         # full Bandung scrape + auto-sync
+#   bin/scrapper-vps scrape --kelurahan "Cihapit"   # spesifik
+#   bin/scrapper-vps sync --all     # manual sync semua file
+#   bin/scrapper-vps status         # progress + sync summary
+#   bin/scrapper-vps shell          # interactive bash di container
+#   bin/scrapper-vps pull           # rsync data/output dari VPS ke laptop
+#   bin/scrapper-vps ps             # container status
+#   bin/scrapper-vps redeploy       # force pull image baru + restart
+
+set -e
+
+VPS_HOST="${VPS_HOST:?Set VPS_HOST=user@host (mis. dios@182.23.12.142)}"
+PROJ_DIR="${VPS_PROJ_DIR:-/opt/scrapper-google-maps}"
+COMPOSE="docker compose -f $PROJ_DIR/docker-compose.prod.yml"
+
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+  logs)
+    ssh "$VPS_HOST" "$COMPOSE logs -f --tail=100"
+    ;;
+  scrape)
+    ssh -t "$VPS_HOST" "$COMPOSE exec scraper python scripts/scraper.py --resume --auto-sync $*"
+    ;;
+  sync)
+    ssh -t "$VPS_HOST" "$COMPOSE exec scraper python scripts/sync.py $*"
+    ;;
+  status)
+    ssh "$VPS_HOST" "$COMPOSE exec -T scraper python -c 'from src.storage import progress_summary, sync_summary; print(\"scrape:\", progress_summary()); print(\"sync:\", sync_summary())'"
+    ;;
+  shell)
+    ssh -t "$VPS_HOST" "$COMPOSE exec scraper bash"
+    ;;
+  pull)
+    mkdir -p ./data/output-from-vps
+    rsync -avz --progress "$VPS_HOST:$PROJ_DIR/data/output/" ./data/output-from-vps/
+    ;;
+  ps)
+    ssh "$VPS_HOST" "$COMPOSE ps"
+    ;;
+  redeploy)
+    ssh "$VPS_HOST" "$COMPOSE pull && $COMPOSE up -d && $COMPOSE ps"
+    ;;
+  help|--help|-h|*)
+    echo "Usage: $0 {logs|scrape|sync|status|shell|pull|ps|redeploy} [args...]"
+    echo ""
+    echo "Examples:"
+    echo "  $0 scrape --kelurahan \"Cihapit\""
+    echo "  $0 sync --all --force"
+    echo "  $0 logs"
+    [ "$cmd" = "help" ] || [ "$cmd" = "--help" ] || [ "$cmd" = "-h" ] || exit 1
+    ;;
+esac

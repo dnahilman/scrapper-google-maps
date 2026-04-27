@@ -1,0 +1,43 @@
+# VCS
+.git
+.github
+.gitignore
+
+# Python
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+
+# Env / secrets — JANGAN masuk image
+.env
+.env.local
+.env.example
+.env.*
+
+# Local runtime data — akan di-mount sebagai volume
+data
+logs
+progress.db
+*.db
+*.db-journal
+
+# Playwright local cache
+.playwright
+
+# OS / editor
+.DS_Store
+.idea
+.vscode
+
+# Docs (tidak perlu di image)
+README.md
+*.md
+
+# Claude / agent metadata
+.claude
+
+# Plan files
+plans
