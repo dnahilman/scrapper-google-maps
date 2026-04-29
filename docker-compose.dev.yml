@@ -1,24 +1,17 @@
-# Local development compose — build image lokal + bind source untuk hot edit
-# Usage:
-#   APP_URL=... GOOGLE_MAPS_SYNC_API_KEY=... KEYWORD=cafe \
-#     docker compose -f docker-compose.dev.yml up -d --build
-#   docker compose -f docker-compose.dev.yml exec scraper python scripts/scraper.py --kelurahan "Sukawarna" --limit 1 --auto-sync
-#
-# Ganti keyword tanpa rebuild: docker compose exec -e KEYWORD=barbershop scraper python scripts/scraper.py --resume
+# Local development compose — build image lokal + bind source untuk hot edit.
+# Pre-req: .env.local berisi APP_URL + GOOGLE_MAPS_SYNC_API_KEY (lihat .env.example).
 services:
   scraper:
     build:
       context: .
       args:
-        APP_URL: ${APP_URL:-https://api.hilman.imola.ai/api}
-        GOOGLE_MAPS_SYNC_API_KEY: ${GOOGLE_MAPS_SYNC_API_KEY:-}
-        KEYWORD: ${KEYWORD:-cafe}
         MIN_DELAY_SEC: 5
         MAX_DELAY_SEC: 12
     image: scrapper:dev
     container_name: scrapper-dev
-    environment:
-      KEYWORD: ${KEYWORD:-cafe}
+    # APP_URL + GOOGLE_MAPS_SYNC_API_KEY dari .env.local (runtime, no build bake)
+    env_file:
+      - .env.local
     volumes:
       # Hot edit source (no rebuild needed)
       - ./src:/app/src

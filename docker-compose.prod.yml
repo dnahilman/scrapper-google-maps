@@ -1,18 +1,14 @@
-# Production compose untuk VPS — pull image dari GHCR (no build, no Python di VPS)
-# Usage di VPS:
-#   echo "KEYWORD=cafe" >> .env             # set keyword target sekali
-#   docker compose -f docker-compose.prod.yml pull
-#   docker compose -f docker-compose.prod.yml up -d
-#
-# Ganti keyword runtime tanpa restart container:
-#   docker exec -e KEYWORD=barbershop scrapper-prod python scripts/scraper.py --resume --auto-sync
+# Production compose untuk VPS — pull image dari GHCR (no build, no Python di VPS).
+# Pre-req di VPS: .env.local di /opt/scrapper-google-maps/ berisi APP_URL +
+# GOOGLE_MAPS_SYNC_API_KEY. CI/CD bisa auto-write file ini dari GitHub Secrets.
 services:
   scraper:
     image: ghcr.io/dnahilman/scrapper-google-maps:latest
     container_name: scrapper-prod
     restart: unless-stopped
-    environment:
-      KEYWORD: ${KEYWORD:-cafe}
+    # APP_URL + GOOGLE_MAPS_SYNC_API_KEY runtime injection — tidak di-bake ke image.
+    env_file:
+      - .env.local
     volumes:
       # Output JSON + progress.db per keyword tersimpan di ./data/<keyword>/
       - ./data:/app/data

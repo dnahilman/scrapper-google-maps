@@ -10,18 +10,44 @@ ROOT = Path(__file__).parent
 # Load env dari .env.local (single source of truth)
 load_dotenv(ROOT / ".env.local")
 
-# Keyword target scraping. Override via env: KEYWORD=barbershop python scripts/scraper.py
-KEYWORD = os.getenv("KEYWORD", "cafe").strip().lower() or "cafe"
-
 DATA_DIR = ROOT / "data"
-KEYWORD_DIR = DATA_DIR / KEYWORD
-OUTPUT_DIR = KEYWORD_DIR
 LOG_DIR = ROOT / "logs"
 KELURAHAN_FILE = DATA_DIR / "kelurahan_bandung.json"
-PROGRESS_DB = KEYWORD_DIR / "progress.db"
 
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# ============================================================================
+# Keyword target scraping — di-set via --keyword CLI flag (lihat scripts/*.py).
+# Storage mengalir dari sini: data/<keyword>/{*.json, progress.db}.
+# ============================================================================
+_KEYWORD: str | None = None
+
+
+def set_keyword(keyword: str) -> None:
+    global _KEYWORD
+    kw = (keyword or "").strip().lower()
+    if not kw:
+        raise ValueError("Keyword tidak boleh kosong")
+    _KEYWORD = kw
+
+
+def get_keyword() -> str:
+    if _KEYWORD is None:
+        raise RuntimeError(
+            "Keyword belum di-set. Pass --keyword di CLI sebelum panggil storage/scraper API."
+        )
+    return _KEYWORD
+
+
+def output_dir() -> Path:
+    """Folder output JSON + progress.db untuk keyword aktif. Auto-create."""
+    d = DATA_DIR / get_keyword()
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def progress_db() -> Path:
+    return output_dir() / "progress.db"
 
 # ============================================================================
 # Browser & delay

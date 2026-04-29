@@ -4,11 +4,11 @@ Sync progress tracked di SQLite (tabel sync_progress) — file yang sudah sukses
 sync di-skip otomatis. Pakai --force untuk re-sync semua.
 
 Usage:
-    python scripts/sync.py --kelurahan "Sukawarna"      # sync 1 file
-    python scripts/sync.py --all                         # sync semua file (skip yang sudah)
-    python scripts/sync.py --all --force                 # force re-sync semua
-    python scripts/sync.py --file path/to/file.json      # sync file spesifik
-    python scripts/sync.py --kelurahan "Sukawarna" --dry-run   # preview, no POST
+    python scripts/sync.py --keyword cafe --kelurahan "Sukawarna"   # sync 1 file
+    python scripts/sync.py --keyword cafe --all                      # sync semua (skip yang sudah)
+    python scripts/sync.py --keyword cafe --all --force              # force re-sync semua
+    python scripts/sync.py --keyword cafe --file path/to/file.json   # file spesifik
+    python scripts/sync.py --keyword cafe --kelurahan "Sukawarna" --dry-run   # preview
 """
 import sys
 from pathlib import Path
@@ -16,7 +16,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import argparse
 
-from config import APP_URL, OUTPUT_DIR, SYNC_ENDPOINT
+import config
+from config import APP_URL, SYNC_ENDPOINT
 from src.logger import get_logger
 from src.storage import init_db, is_synced, mark_synced, mark_sync_failed, sync_summary
 from src.sync_client import post_file
@@ -26,6 +27,11 @@ log = get_logger("sync")
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sync JSON ke API sync-google-maps")
+    parser.add_argument(
+        "--keyword",
+        default="cafe",
+        help="Target keyword (folder data/<keyword>/). Default: cafe",
+    )
     g = parser.add_mutually_exclusive_group(required=True)
     g.add_argument("--kelurahan", help="Sync file kelurahan spesifik (substring match)")
     g.add_argument("--file", help="Path absolut ke file JSON")
@@ -33,20 +39,22 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Preview, tidak POST")
     parser.add_argument("--force", action="store_true", help="Re-sync file yang sudah pernah sukses")
     args = parser.parse_args()
+    config.set_keyword(args.keyword)
 
     init_db()
 
+    out_dir = config.output_dir()
     files: list[Path] = []
     if args.file:
         files = [Path(args.file)]
     elif args.kelurahan:
         needle = args.kelurahan.lower().replace(" ", "_")
-        files = sorted(p for p in OUTPUT_DIR.glob("*.json") if needle in p.stem.lower())
+        files = sorted(p for p in out_dir.glob("*.json") if needle in p.stem.lower())
         if not files:
-            print(f"Tidak ada file matching '{args.kelurahan}' di {OUTPUT_DIR}", file=sys.stderr)
+            print(f"Tidak ada file matching '{args.kelurahan}' di {out_dir}", file=sys.stderr)
             sys.exit(1)
     else:
-        files = sorted(OUTPUT_DIR.glob("*.json"))
+        files = sorted(out_dir.glob("*.json"))
 
     log.info(
         f"Sync {len(files)} file ke {APP_URL}{SYNC_ENDPOINT}"

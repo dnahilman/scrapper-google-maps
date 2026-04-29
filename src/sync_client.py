@@ -9,7 +9,7 @@ from pathlib import Path
 
 import httpx
 
-from config import APP_URL, GOOGLE_MAPS_SYNC_API_KEY, OUTPUT_DIR, SYNC_ENDPOINT
+from config import APP_URL, GOOGLE_MAPS_SYNC_API_KEY, SYNC_ENDPOINT, output_dir
 from src.logger import get_logger
 from src.storage import is_synced, mark_synced, mark_sync_failed
 
@@ -83,7 +83,7 @@ def sync_one_kelurahan(file_stem: str, force: bool = False) -> bool:
         log.info(f"  Skip {file_stem}: sudah ter-sync sebelumnya")
         return True
 
-    file_path = OUTPUT_DIR / f"{file_stem}.json"
+    file_path = output_dir() / f"{file_stem}.json"
     if not file_path.exists():
         log.warning(f"  File tidak ada: {file_path}")
         return False

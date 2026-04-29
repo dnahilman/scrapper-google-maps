@@ -4,9 +4,9 @@ ke schema baru (array of SyncItem). Replace file in-place.
 Idempotent: file yang sudah dalam schema baru dilewati.
 
 Usage:
-    python scripts/migrate.py                            # migrate semua file
-    python scripts/migrate.py --kelurahan "Sukawarna"   # spesifik
-    python scripts/migrate.py --dry-run                  # preview
+    python scripts/migrate.py --keyword cafe                          # migrate semua file
+    python scripts/migrate.py --keyword cafe --kelurahan "Sukawarna"  # spesifik
+    python scripts/migrate.py --keyword cafe --dry-run                # preview
 """
 import sys
 from pathlib import Path
@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import argparse
 import json
 
-from config import OUTPUT_DIR
+import config
 from src.transform import is_already_sync_schema, transform_payload
 
 
@@ -37,18 +37,25 @@ def migrate_file(path: Path, dry_run: bool = False) -> tuple[str, int]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Migrate file JSON lama ke SyncItem schema")
+    parser.add_argument(
+        "--keyword",
+        default="cafe",
+        help="Target keyword (folder data/<keyword>/). Default: cafe",
+    )
     parser.add_argument("--kelurahan", help="Migrate file kelurahan spesifik (substring)")
     parser.add_argument("--dry-run", action="store_true", help="Preview, tidak overwrite")
     args = parser.parse_args()
+    config.set_keyword(args.keyword)
 
+    out_dir = config.output_dir()
     if args.kelurahan:
         needle = args.kelurahan.lower().replace(" ", "_")
-        files = sorted(p for p in OUTPUT_DIR.glob("*.json") if needle in p.stem.lower())
+        files = sorted(p for p in out_dir.glob("*.json") if needle in p.stem.lower())
     else:
-        files = sorted(OUTPUT_DIR.glob("*.json"))
+        files = sorted(out_dir.glob("*.json"))
 
     if not files:
-        print(f"Tidak ada file di {OUTPUT_DIR}", file=sys.stderr)
+        print(f"Tidak ada file di {out_dir}", file=sys.stderr)
         sys.exit(1)
 
     print(f"Migrate {len(files)} file" + (" (DRY-RUN)" if args.dry_run else ""))

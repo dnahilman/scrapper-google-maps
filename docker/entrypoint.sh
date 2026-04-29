@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-# Pastikan mount points ada (kalau host belum bikin folder)
+# Pastikan mount points ada (kalau host belum bikin folder).
+# Folder per-keyword (data/<keyword>/) dibuat otomatis oleh scraper saat dijalankan
+# dengan flag --keyword.
 mkdir -p /app/data /app/logs
-KW="${KEYWORD:-cafe}"
-mkdir -p "/app/data/${KW}"
 
 # Sanity check env wajib
 if [ -z "$GOOGLE_MAPS_SYNC_API_KEY" ]; then
@@ -13,7 +13,5 @@ fi
 if [ -z "$APP_URL" ]; then
   echo "WARNING: APP_URL kosong" >&2
 fi
-
-echo "[entrypoint] KEYWORD=${KW}  output=/app/data/${KW}"
 
 exec "$@"

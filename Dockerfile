@@ -1,20 +1,18 @@
-# Google Maps Scraper — production image (keyword configurable)
+# Google Maps Scraper — production image (multi-keyword via CLI flag --keyword)
 # Base: Playwright official Python image (Chromium pre-installed)
-FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy
+#
+# Image generic — TIDAK ada secret yang di-bake. APP_URL + GOOGLE_MAPS_SYNC_API_KEY
+# di-inject saat runtime via env_file di docker-compose.{dev,prod}.yml. Itu artinya
+# image bisa public/private di GHCR tanpa khawatir leak credential.
+FROM mcr.microsoft.com/playwright/python:v1.59.0-jammy
 
-# Build-time secrets (di-bake ke image — image WAJIB private di GHCR)
-ARG APP_URL=https://api.hilman.imola.ai/api
-ARG GOOGLE_MAPS_SYNC_API_KEY=""
-ARG KEYWORD=cafe
+# Tuning args (non-secret) — defaults bisa di-override saat build di compose dev.
 ARG MIN_DELAY_SEC=10
 ARG MAX_DELAY_SEC=25
 ARG MAX_REVIEWS_PER_SHOP=200
 ARG MAX_REVIEW_AGE_DAYS=730
 
-ENV APP_URL=${APP_URL} \
-    GOOGLE_MAPS_SYNC_API_KEY=${GOOGLE_MAPS_SYNC_API_KEY} \
-    KEYWORD=${KEYWORD} \
-    HEADLESS=true \
+ENV HEADLESS=true \
     MIN_DELAY_SEC=${MIN_DELAY_SEC} \
     MAX_DELAY_SEC=${MAX_DELAY_SEC} \
     MAX_REVIEWS_PER_SHOP=${MAX_REVIEWS_PER_SHOP} \
@@ -40,8 +38,8 @@ COPY scripts ./scripts
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Persistent dirs (akan di-bind mount ke host saat runtime). progress.db tinggal di
-# /app/data/<keyword>/progress.db — auto-created saat scraper start.
+# Persistent dirs (akan di-bind mount ke host saat runtime). Per-keyword folder
+# data/<keyword>/ + progress.db auto-created saat scraper jalan.
 RUN mkdir -p /app/data /app/logs
 
 # OCI labels — link image ke GitHub repo, supaya GHCR auto-detect repo source
