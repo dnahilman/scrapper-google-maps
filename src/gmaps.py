@@ -7,6 +7,7 @@ from playwright.async_api import Page, Locator, TimeoutError as PWTimeout
 
 from config import (
     GMAPS_BASE_URL,
+    KEYWORD,
     SEARCH_QUERY_TEMPLATE,
     MIN_DELAY_SEC,
     MAX_DELAY_SEC,
@@ -165,13 +166,18 @@ async def _click_tab(page: Page, *aria_patterns: str) -> bool:
 
 
 # ============================================================================
-# Search: cari semua barbershop di kelurahan
+# Search: cari semua place sesuai keyword di kelurahan
 # ============================================================================
 
-async def search_barbershops(
-    page: Page, kelurahan: str, kecamatan: str, limit: int | None = None
+async def search_places(
+    page: Page,
+    kelurahan: str,
+    kecamatan: str,
+    limit: int | None = None,
+    keyword: str | None = None,
 ) -> list[str]:
-    query = SEARCH_QUERY_TEMPLATE.format(kelurahan=kelurahan, kecamatan=kecamatan)
+    kw = keyword or KEYWORD
+    query = SEARCH_QUERY_TEMPLATE.format(keyword=kw, kelurahan=kelurahan, kecamatan=kecamatan)
     url = f"{GMAPS_BASE_URL}/search/{quote(query)}?hl=id"
     log.info(f"Search: {query}")
     await page.goto(url, wait_until="domcontentloaded", timeout=60000)
@@ -211,7 +217,7 @@ async def search_barbershops(
             urls.append(href)
         if limit and len(urls) >= limit:
             break
-    log.info(f"Ditemukan {len(urls)} barbershop di {kelurahan}" + (f" (limit {limit})" if limit else ""))
+    log.info(f"Ditemukan {len(urls)} place di {kelurahan}" + (f" (limit {limit})" if limit else ""))
     return urls[:limit] if limit else urls
 
 

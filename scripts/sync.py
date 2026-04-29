@@ -29,7 +29,7 @@ def main() -> None:
     g = parser.add_mutually_exclusive_group(required=True)
     g.add_argument("--kelurahan", help="Sync file kelurahan spesifik (substring match)")
     g.add_argument("--file", help="Path absolut ke file JSON")
-    g.add_argument("--all", action="store_true", help="Sync semua file di data/output/")
+    g.add_argument("--all", action="store_true", help="Sync semua file di data/{keyword}/")
     parser.add_argument("--dry-run", action="store_true", help="Preview, tidak POST")
     parser.add_argument("--force", action="store_true", help="Re-sync file yang sudah pernah sukses")
     args = parser.parse_args()

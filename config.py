@@ -9,11 +9,16 @@ ROOT = Path(__file__).parent
 
 # Load env dari .env.local (single source of truth)
 load_dotenv(ROOT / ".env.local")
+
+# Keyword target scraping. Override via env: KEYWORD=barbershop python scripts/scraper.py
+KEYWORD = os.getenv("KEYWORD", "cafe").strip().lower() or "cafe"
+
 DATA_DIR = ROOT / "data"
-OUTPUT_DIR = DATA_DIR / "output"
+KEYWORD_DIR = DATA_DIR / KEYWORD
+OUTPUT_DIR = KEYWORD_DIR
 LOG_DIR = ROOT / "logs"
 KELURAHAN_FILE = DATA_DIR / "kelurahan_bandung.json"
-PROGRESS_DB = ROOT / "progress.db"
+PROGRESS_DB = KEYWORD_DIR / "progress.db"
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -50,7 +55,7 @@ SYNC_ENDPOINT = "/v1/web/sync-google-maps"
 # ============================================================================
 # Search query template & target
 # ============================================================================
-SEARCH_QUERY_TEMPLATE = "barbershop di {kelurahan}, {kecamatan}, Bandung"
+SEARCH_QUERY_TEMPLATE = "{keyword} di {kelurahan}, {kecamatan}, Bandung"
 GMAPS_BASE_URL = "https://www.google.com/maps"
 
 # ============================================================================

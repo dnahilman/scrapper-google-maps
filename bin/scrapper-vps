@@ -4,6 +4,7 @@
 # Setup (sekali):
 #   chmod +x bin/scrapper-vps
 #   export VPS_HOST=dios@182.23.12.142     # taruh di ~/.bashrc untuk persistent
+#   export KEYWORD=cafe                    # target scraping (default: cafe)
 #
 # Actions:
 #   status       - cek progress + sync summary
@@ -23,19 +24,20 @@ VPS_HOST="${VPS_HOST:?Set VPS_HOST=user@host (mis. dios@182.23.12.142)}"
 PROJ_DIR="${VPS_PROJ_DIR:-/opt/scrapper-google-maps}"
 CONTAINER="scrapper-prod"
 COMPOSE="docker compose -f $PROJ_DIR/docker-compose.prod.yml"
+KEYWORD="${KEYWORD:-cafe}"
 
 cmd="${1:-help}"
 shift || true
 
 case "$cmd" in
   status)
-    ssh "$VPS_HOST" "docker exec -i $CONTAINER python -c \"from src.storage import progress_summary, sync_summary; print('scrape:', progress_summary()); print('sync:', sync_summary())\""
+    ssh "$VPS_HOST" "docker exec -e KEYWORD=$KEYWORD -i $CONTAINER python -c \"from config import KEYWORD; from src.storage import progress_summary, sync_summary; print('keyword:', KEYWORD); print('scrape:', progress_summary()); print('sync:', sync_summary())\""
     ;;
   scrape)
     # Detached: process tetap jalan walau SSH close
-    ssh "$VPS_HOST" "docker exec -d $CONTAINER python scripts/scraper.py --resume --auto-sync $*"
+    ssh "$VPS_HOST" "docker exec -d -e KEYWORD=$KEYWORD $CONTAINER python scripts/scraper.py --resume --auto-sync $*"
     echo ""
-    echo "[OK] Scraper started in BACKGROUND (detached)"
+    echo "[OK] Scraper started in BACKGROUND (detached) — keyword=$KEYWORD"
     echo "Anda boleh close terminal / shutdown laptop. Scrape jalan di VPS."
     echo ""
     echo "Monitor:"
@@ -58,14 +60,14 @@ case "$cmd" in
     ssh -t "$VPS_HOST" "docker exec -t $CONTAINER bash -c 'F=\$(ls -t /app/logs/scraper-*.log 2>/dev/null | head -1); [ -n \"\$F\" ] && tail -f -n 100 \"\$F\" || echo \"No log files yet\"'"
     ;;
   sync)
-    ssh -t "$VPS_HOST" "docker exec -it $CONTAINER python scripts/sync.py $*"
+    ssh -t "$VPS_HOST" "docker exec -e KEYWORD=$KEYWORD -it $CONTAINER python scripts/sync.py $*"
     ;;
   shell)
-    ssh -t "$VPS_HOST" "docker exec -it $CONTAINER bash"
+    ssh -t "$VPS_HOST" "docker exec -e KEYWORD=$KEYWORD -it $CONTAINER bash"
     ;;
   pull)
-    mkdir -p ./data/output-from-vps
-    rsync -avz --progress "$VPS_HOST:$PROJ_DIR/data/output/" ./data/output-from-vps/
+    mkdir -p "./data/${KEYWORD}-from-vps"
+    rsync -avz --progress "$VPS_HOST:$PROJ_DIR/data/$KEYWORD/" "./data/${KEYWORD}-from-vps/"
     ;;
   ps)
     ssh "$VPS_HOST" "$COMPOSE ps"
@@ -88,9 +90,12 @@ case "$cmd" in
     echo "  pull         Download data ke laptop"
     echo "  redeploy     Force pull image baru"
     echo ""
+    echo "Env:"
+    echo "  KEYWORD=cafe (default) — set ke 'barbershop', 'kuliner', dll"
+    echo ""
     echo "Examples:"
     echo "  $0 scrape"
-    echo "  $0 scrape --kelurahan \"Cihapit\""
+    echo "  KEYWORD=barbershop $0 scrape --kelurahan \"Cihapit\""
     echo "  $0 sync --all --force"
     [ "$cmd" = "help" ] || [ "$cmd" = "--help" ] || [ "$cmd" = "-h" ] || exit 1
     ;;

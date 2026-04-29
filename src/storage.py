@@ -92,13 +92,13 @@ def is_done(kelurahan: str) -> bool:
     return row is not None and row[0] == "done"
 
 
-def save_raw_json(kelurahan: str, kecamatan: str, barbershops: list[dict]) -> Path:
+def save_raw_json(kelurahan: str, kecamatan: str, places: list[dict]) -> Path:
     """Simpan hasil scraping dalam SyncItem schema (langsung siap POST ke API).
 
     Format file: array of SyncItem (lihat src/transform.py).
     Metadata kelurahan/kecamatan tersimpan di progress.db, bukan di JSON.
     """
-    items = [to_sync_item(s) for s in barbershops]
+    items = [to_sync_item(s) for s in places]
     safe_name = kelurahan.replace("/", "_").replace(" ", "_")
     path = OUTPUT_DIR / f"{safe_name}.json"
     path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")

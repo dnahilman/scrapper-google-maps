@@ -1,4 +1,12 @@
-"""Entry point CLI untuk scraping barbershop Bandung per kelurahan."""
+"""Entry point CLI untuk scraping Google Maps per kelurahan, keyword configurable.
+
+Keyword di-set via env var KEYWORD (default: cafe). Output disimpan di
+data/{keyword}/{kelurahan}.json, progress.db terpisah per keyword.
+
+Contoh:
+    KEYWORD=cafe python scripts/scraper.py --resume
+    KEYWORD=barbershop python scripts/scraper.py --kelurahan "Cihapit"
+"""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -6,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import argparse
 import asyncio
 from tqdm.asyncio import tqdm
-from config import MAX_CAPTCHA_RETRY, MAX_NETWORK_ERRORS
+from config import KEYWORD, MAX_CAPTCHA_RETRY, MAX_NETWORK_ERRORS, OUTPUT_DIR
 from src.browser import new_browser_session
-from src.gmaps import search_barbershops, scrape_place, CaptchaDetected
+from src.gmaps import search_places, scrape_place, CaptchaDetected
 from src.logger import get_logger
 from src.seed import filter_kelurahan
 from src.storage import (
@@ -24,7 +32,7 @@ async def scrape_kelurahan(context, kel: dict, limit: int | None = None) -> int:
     name, kec = kel["kelurahan"], kel["kecamatan"]
     page = await context.new_page()
     try:
-        urls = await search_barbershops(page, name, kec, limit=limit)
+        urls = await search_places(page, name, kec, limit=limit)
         shops: list[dict] = []
         net_errors = 0
         for i, url in enumerate(urls, 1):
@@ -59,9 +67,10 @@ async def run(kelurahan_filter: str | None, resume: bool, limit: int | None, aut
     if resume:
         items = [k for k in items if not is_done(k["kelurahan"])]
     log.info(
-        f"Akan scrape {len(items)} kelurahan"
-        + (f" (limit {limit} shop/kelurahan)" if limit else "")
+        f"[keyword={KEYWORD}] Akan scrape {len(items)} kelurahan"
+        + (f" (limit {limit} place/kelurahan)" if limit else "")
         + (" [AUTO-SYNC]" if auto_sync else "")
+        + f" → output: {OUTPUT_DIR}"
     )
 
     captcha_streak = 0
@@ -73,7 +82,7 @@ async def run(kelurahan_filter: str | None, resume: bool, limit: int | None, aut
                 count = await scrape_kelurahan(context, kel, limit=limit)
                 mark_done(name, count)
                 captcha_streak = 0
-                log.info(f"DONE {name}: {count} barbershop")
+                log.info(f"DONE {name}: {count} {KEYWORD}")
 
                 if auto_sync and count > 0:
                     file_stem = name.replace("/", "_").replace(" ", "_")
@@ -94,7 +103,9 @@ async def run(kelurahan_filter: str | None, resume: bool, limit: int | None, aut
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Bandung Barbershop Scraper")
+    parser = argparse.ArgumentParser(
+        description=f"Google Maps Scraper (keyword={KEYWORD}, override via env KEYWORD=...)"
+    )
     parser.add_argument("--kelurahan", help="Filter ke kelurahan tertentu (substring match)")
     parser.add_argument("--resume", action="store_true", help="Skip kelurahan yang sudah selesai")
     parser.add_argument("--dry-run", action="store_true", help="Cuma list kelurahan, tanpa scrape")
@@ -102,7 +113,7 @@ def main() -> None:
         "--limit",
         type=int,
         default=None,
-        help="Maks jumlah barbershop yang di-scrape per kelurahan (default: tidak terbatas).",
+        help="Maks jumlah place yang di-scrape per kelurahan (default: tidak terbatas).",
     )
     parser.add_argument(
         "--auto-sync",
