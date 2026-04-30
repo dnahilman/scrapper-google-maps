@@ -1,0 +1,52 @@
+# docker-compose.test.yml — Quick pull & run test dari GHCR
+#
+# Tujuan: verifikasi image public di GHCR + verifikasi image jalan di environment lain.
+# Beda dengan prod compose: pinned version, no restart, no resource limit, no GHCR auth.
+#
+# Usage di computer manapun (Docker / Podman, tanpa clone repo):
+#   mkdir -p scrapper-test && cd scrapper-test
+#   curl -O https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/dev/docker-compose.test.yml
+#
+#   # Buat .env.local (credential)
+#   cat > .env.local <<EOF
+#   APP_URL=https://api.example.com/api
+#   GOOGLE_MAPS_SYNC_API_KEY=your_key_here
+#   EOF
+#
+#   # Pull + jalan
+#   docker compose -f docker-compose.test.yml pull
+#   docker compose -f docker-compose.test.yml up -d
+#
+#   # Verify image bisa exec Python (no scrape, just sanity check)
+#   docker compose -f docker-compose.test.yml exec scraper python -c "
+#   import config; config.set_keyword('cafe')
+#   from src.transform import get_transformer, to_sync_item_cafe
+#   print('keyword:', config.get_keyword())
+#   print('cafe transformer:', get_transformer('cafe').__name__)
+#   "
+#
+#   # Optional: actual scrape test (butuh network + credential valid)
+#   docker compose -f docker-compose.test.yml exec scraper python scripts/scraper.py --keyword cafe --kelurahan "Cihapit" --limit 1
+#
+#   # Cleanup
+#   docker compose -f docker-compose.test.yml down
+#   rm -rf data logs .env.local
+#
+# Ganti tag image (lihat https://github.com/dnahilman/scrapper-google-maps/pkgs/container/scrapper-google-maps):
+#   - 0.1.0  → exact version (recommended untuk reproducible test)
+#   - 0.1    → latest patch di minor 0.1
+#   - 0      → latest minor di major 0
+#   - latest → most recent release tag
+#   - dev    → branch dev terbaru (staging)
+services:
+  scraper:
+    image: ghcr.io/dnahilman/scrapper-google-maps:0.1.0
+    container_name: scrapper-test
+    env_file:
+      - .env.local
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    shm_size: 1g
+    stdin_open: true
+    tty: true
