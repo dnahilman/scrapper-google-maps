@@ -3,8 +3,9 @@ name: Build & Deploy Scrapper
 on:
   push:
     branches: [main]
-    tags: ['v*']
   workflow_dispatch:
+# Note: tag trigger 'v*' di-pindah ke .github/workflows/build.yml (build-only).
+# Workflow ini fokus continuous deploy `latest` dari main ke VPS.
 
 env:
   REGISTRY: ghcr.io
