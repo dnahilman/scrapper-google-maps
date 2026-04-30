@@ -82,7 +82,7 @@ if ($Vps) {
     $Mode = "vps"
     $VpsHost = $env:VPS_HOST
     $ProjDir = if ($env:VPS_PROJ_DIR) { $env:VPS_PROJ_DIR } else { "/opt/scrapper-google-maps" }
-    $ProdContainer = "scrapper-prod"
+    $ProdContainer = if ($env:VPS_PROD_CONTAINER) { $env:VPS_PROD_CONTAINER } else { "scrapper-prod" }
     $ProdCompose = "docker compose -f $ProjDir/docker-compose.prod.yml"
 } else {
     $Mode = "local"
