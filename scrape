@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+# scrape — helper CLI untuk Google Maps Scraper di VPS
+#
+# Usage: ./scrape <command> [args]
+# Letakkan di /opt/scrapper/ lalu chmod +x scrape
+
+set -e
+
+CONTAINER="scrapper-cafe"
+COMPOSE_FILE="docker-compose.yml"
+
+# ─── helpers ──────────────────────────────────────────────────────────────────
+
+_exec()   { docker exec "$CONTAINER" "$@"; }
+_execd()  { docker exec -d "$CONTAINER" "$@"; }
+_py()     { _exec python "$@"; }
+
+_require_keyword() {
+  if [ -z "$1" ]; then
+    echo "Error: keyword wajib. Contoh: cafe | barbershop"
+    exit 1
+  fi
+}
+
+_db_query() {
+  local keyword="$1"
+  local sql="$2"
+  _py - <<PYEOF
+import config, sqlite3
+config.set_keyword("$keyword")
+conn = sqlite3.connect(config.progress_db())
+for row in conn.execute("""$sql"""):
+    print(row)
+conn.close()
+PYEOF
+}
+
+# ─── commands ─────────────────────────────────────────────────────────────────
+
+cmd_help() {
+  cat <<'HELP'
+Usage: ./scrape <command> [args]
+
+Container & logs:
+  status                        Status container + resource usage
+  ps                            Proses yang sedang jalan di dalam container
+  log [--tail N]                Log container (default tail 100, follow)
+  logfile <keyword>             Tail log file scraper terbaru untuk keyword
+
+Scraping:
+  run <keyword> [extra args]    Jalankan scraper (background, --resume by default)
+  run-sync <keyword>            Jalankan scraper + auto-sync (background, --resume)
+  stop                          Kill semua proses scraper.py yang sedang jalan
+
+Sync:
+  sync <keyword> [--force]      Sync semua file yang belum (skip yang sudah done)
+  sync-one <keyword> <kel>      Sync 1 kelurahan spesifik
+  sync-dry <keyword>            Preview sync tanpa POST
+
+Progress:
+  progress <keyword>            Ringkasan scraping progress (done/failed/in_progress)
+  sync-progress <keyword>       Ringkasan sync progress (done/failed)
+  db <keyword>                  Full stats scraping + sync sekaligus
+
+Shell:
+  shell                         Buka bash di dalam container
+  py                            Buka Python REPL di dalam container
+HELP
+}
+
+cmd_status() {
+  echo "=== Container ==="
+  docker compose -f "$COMPOSE_FILE" ps
+  echo ""
+  echo "=== Resource usage ==="
+  docker stats "$CONTAINER" --no-stream
+}
+
+cmd_ps() {
+  echo "=== Proses di $CONTAINER ==="
+  _exec ps aux | grep -v "^root.*ps aux" | grep -v "^USER"
+}
+
+cmd_log() {
+  local tail="${1:-100}"
+  docker logs -f --tail "$tail" "$CONTAINER"
+}
+
+cmd_logfile() {
+  local keyword="$1"
+  _require_keyword "$keyword"
+  _exec bash -c "
+    f=\$(ls -t /app/logs/scraper-*.log 2>/dev/null | head -1)
+    if [ -z \"\$f\" ]; then echo 'Belum ada log file'; exit 1; fi
+    echo \"=== \$f ===\"
+    tail -f -n 100 \"\$f\"
+  "
+}
+
+cmd_run() {
+  local keyword="$1"; shift
+  _require_keyword "$keyword"
+  echo "Menjalankan scraper keyword=$keyword (background, --resume) ..."
+  _execd python scripts/scraper.py --keyword "$keyword" --resume "$@"
+  echo "OK. Pantau log: ./scrape logfile $keyword"
+}
+
+cmd_run_sync() {
+  local keyword="$1"; shift
+  _require_keyword "$keyword"
+  echo "Menjalankan scraper keyword=$keyword + auto-sync (background, --resume) ..."
+  _execd python scripts/scraper.py --keyword "$keyword" --resume --auto-sync "$@"
+  echo "OK. Pantau log: ./scrape logfile $keyword"
+}
+
+cmd_stop() {
+  echo "Menghentikan proses scraper.py ..."
+  _exec pkill -f "scripts/scraper.py" && echo "Stopped." || echo "Tidak ada proses scraper yang jalan."
+}
+
+cmd_sync() {
+  local keyword="$1"; shift
+  _require_keyword "$keyword"
+  _exec python scripts/sync.py --keyword "$keyword" --all "$@"
+}
+
+cmd_sync_one() {
+  local keyword="$1"
+  local kelurahan="$2"
+  _require_keyword "$keyword"
+  if [ -z "$kelurahan" ]; then echo "Error: kelurahan wajib."; exit 1; fi
+  _exec python scripts/sync.py --keyword "$keyword" --kelurahan "$kelurahan"
+}
+
+cmd_sync_dry() {
+  local keyword="$1"
+  _require_keyword "$keyword"
+  _exec python scripts/sync.py --keyword "$keyword" --all --dry-run
+}
+
+cmd_progress() {
+  local keyword="$1"
+  _require_keyword "$keyword"
+  echo "=== Scraping progress: $keyword ==="
+  _db_query "$keyword" "SELECT status, COUNT(*) AS jumlah FROM kelurahan_progress GROUP BY status"
+  echo ""
+  _db_query "$keyword" "SELECT COUNT(*) AS total_kelurahan FROM kelurahan_progress"
+}
+
+cmd_sync_progress() {
+  local keyword="$1"
+  _require_keyword "$keyword"
+  echo "=== Sync progress: $keyword ==="
+  _db_query "$keyword" "
+    SELECT status, COUNT(*) AS jumlah, COALESCE(SUM(inserted),0) AS total_inserted
+    FROM sync_progress GROUP BY status
+  "
+}
+
+cmd_db() {
+  local keyword="$1"
+  _require_keyword "$keyword"
+  echo "=== Scraping: $keyword ==="
+  _db_query "$keyword" "SELECT status, COUNT(*) FROM kelurahan_progress GROUP BY status"
+  echo ""
+  echo "=== Sync: $keyword ==="
+  _db_query "$keyword" "
+    SELECT status, COUNT(*) AS jumlah, COALESCE(SUM(inserted),0) AS total_inserted
+    FROM sync_progress GROUP BY status
+  "
+}
+
+cmd_shell() {
+  docker exec -it "$CONTAINER" bash
+}
+
+cmd_py() {
+  docker exec -it "$CONTAINER" python
+}
+
+# ─── dispatch ─────────────────────────────────────────────────────────────────
+
+case "${1:-help}" in
+  help|-h|--help)   cmd_help ;;
+  status)           cmd_status ;;
+  ps)               cmd_ps ;;
+  log)              shift; cmd_log "$@" ;;
+  logfile)          shift; cmd_logfile "$@" ;;
+  run)              shift; cmd_run "$@" ;;
+  run-sync)         shift; cmd_run_sync "$@" ;;
+  stop)             cmd_stop ;;
+  sync)             shift; cmd_sync "$@" ;;
+  sync-one)         shift; cmd_sync_one "$@" ;;
+  sync-dry)         shift; cmd_sync_dry "$@" ;;
+  progress)         shift; cmd_progress "$@" ;;
+  sync-progress)    shift; cmd_sync_progress "$@" ;;
+  db)               shift; cmd_db "$@" ;;
+  shell)            cmd_shell ;;
+  py)               cmd_py ;;
+  *)
+    echo "Command tidak dikenal: $1"
+    echo "Jalankan './scrape help' untuk daftar command."
+    exit 1
+    ;;
+esac

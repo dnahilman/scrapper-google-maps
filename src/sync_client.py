@@ -12,11 +12,13 @@ Module ini di-share antara:
 - scripts/scraper.py --auto-sync (sync inline setelah tiap kelurahan selesai)
 """
 import json
+import os
 from pathlib import Path
 
 import httpx
 
-from config import CAFES_SYNC_URL, GOOGLE_MAPS_SYNC_API_KEY, output_dir
+import config
+from config import GOOGLE_MAPS_SYNC_API_KEY, output_dir
 from src.logger import get_logger
 from src.storage import is_synced, mark_synced, mark_sync_failed
 
@@ -79,17 +81,27 @@ def post_file(file_path: Path, dry_run: bool = False) -> dict:
 
     if not GOOGLE_MAPS_SYNC_API_KEY:
         raise RuntimeError("GOOGLE_MAPS_SYNC_API_KEY kosong. Set di .env.local.")
-    if not CAFES_SYNC_URL:
-        raise RuntimeError("CAFES_SYNC_URL kosong. Set di .env.local.")
+
+    keyword = config.get_keyword()
+    body_key = keyword + "s"
+    # Cek {KEYWORD}_SYNC_URL lalu {KEYWORD}S_SYNC_URL sebagai fallback
+    sync_url = (
+        os.getenv(f"{keyword.upper()}_SYNC_URL")
+        or os.getenv(f"{keyword.upper()}S_SYNC_URL", "")
+    )
+    if not sync_url:
+        raise RuntimeError(
+            f"{keyword.upper()}_SYNC_URL kosong. Set di .env.local."
+        )
 
     headers = {
         "x-api-key": GOOGLE_MAPS_SYNC_API_KEY,
         "Content-Type": "application/json",
     }
-    body = {"cafes": cleaned}
+    body = {body_key: cleaned}
 
     with httpx.Client(timeout=300) as client:
-        r = client.post(CAFES_SYNC_URL, headers=headers, json=body)
+        r = client.post(sync_url, headers=headers, json=body)
 
     log.info(f"  HTTP {r.status_code}")
     try:

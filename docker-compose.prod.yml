@@ -9,6 +9,17 @@ services:
     # APP_URL + GOOGLE_MAPS_SYNC_API_KEY runtime injection — tidak di-bake ke image.
     env_file:
       - .env.local
+    environment:
+      # Default values — di-override oleh .env.local kalau ada
+      - HEADLESS=${HEADLESS:-true}
+      - MIN_DELAY_SEC=${MIN_DELAY_SEC:-5}
+      - MAX_DELAY_SEC=${MAX_DELAY_SEC:-12}
+      - MAX_REVIEWS_PER_SHOP=${MAX_REVIEWS_PER_SHOP:-200}
+      - MAX_REVIEW_AGE_DAYS=${MAX_REVIEW_AGE_DAYS:-730}
+      - SKIP_EMPTY_REVIEWS=${SKIP_EMPTY_REVIEWS:-true}
+      - SORT_REVIEWS_BY_NEWEST=${SORT_REVIEWS_BY_NEWEST:-true}
+      - MAX_CAPTCHA_RETRY=${MAX_CAPTCHA_RETRY:-2}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     volumes:
       # Output JSON + progress.db per keyword tersimpan di ./data/<keyword>/
       - ./data:/app/data
