@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import argparse
 
 import config
-from config import APP_URL, SYNC_ENDPOINT
+from config import CAFES_SYNC_URL
 from src.logger import get_logger
 from src.storage import init_db, is_synced, mark_synced, mark_sync_failed, sync_summary
 from src.sync_client import post_file
@@ -57,7 +57,7 @@ def main() -> None:
         files = sorted(out_dir.glob("*.json"))
 
     log.info(
-        f"Sync {len(files)} file ke {APP_URL}{SYNC_ENDPOINT}"
+        f"Sync {len(files)} file ke {CAFES_SYNC_URL or '<CAFES_SYNC_URL kosong>'}"
         + (" (DRY-RUN)" if args.dry_run else "")
         + (" (FORCE)" if args.force else "")
     )

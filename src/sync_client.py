@@ -1,4 +1,11 @@
-"""HTTP client untuk POST hasil scraping ke API sync-google-maps.
+"""HTTP client untuk POST hasil scraping ke API sync.
+
+Format: JSON body `{ cafes: [...] }` dengan header `x-api-key`.
+Endpoint: `CAFES_SYNC_URL` dari `.env.local`.
+
+Sanitize otomatis sebelum POST:
+- Item tanpa `address` di-drop.
+- `rating` (item & nested reviews) yang null / non-number → 0.0.
 
 Module ini di-share antara:
 - scripts/sync.py (CLI manual sync)
@@ -9,16 +16,46 @@ from pathlib import Path
 
 import httpx
 
-from config import APP_URL, GOOGLE_MAPS_SYNC_API_KEY, SYNC_ENDPOINT, output_dir
+from config import CAFES_SYNC_URL, GOOGLE_MAPS_SYNC_API_KEY, output_dir
 from src.logger import get_logger
 from src.storage import is_synced, mark_synced, mark_sync_failed
 
 log = get_logger("sync_client")
 
 
+def _to_float(val, default: float = 0.0) -> float:
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return default
+
+
+def _sanitize(items: list) -> tuple[list, int, int]:
+    cleaned: list = []
+    dropped = fixed = 0
+    for item in items:
+        if not item.get("address"):
+            dropped += 1
+            continue
+        r = item.get("rating")
+        if r is None or not isinstance(r, (int, float)):
+            item = {**item, "rating": _to_float(r)}
+            fixed += 1
+        if item.get("reviews"):
+            new_reviews = []
+            for rev in item["reviews"]:
+                rr = rev.get("rating")
+                if rr is None or not isinstance(rr, (int, float)):
+                    rev = {**rev, "rating": _to_float(rr)}
+                    fixed += 1
+                new_reviews.append(rev)
+            item = {**item, "reviews": new_reviews}
+        cleaned.append(item)
+    return cleaned, dropped, fixed
+
+
 def post_file(file_path: Path, dry_run: bool = False) -> dict:
-    """POST 1 file JSON ke API. Return result dict (sudah unwrap dari {data:{...}}).
-    Raise httpx.HTTPStatusError kalau API return 4xx/5xx."""
+    """Baca file JSON, sanitize, POST sebagai `{ cafes: [...] }`. Return result dict."""
     if not file_path.exists():
         raise FileNotFoundError(file_path)
 
@@ -29,44 +66,52 @@ def post_file(file_path: Path, dry_run: bool = False) -> dict:
             "jalankan: python scripts/migrate.py"
         )
 
-    log.info(f"  File: {file_path.name} ({len(payload)} items, {file_path.stat().st_size // 1024} KB)")
+    cleaned, dropped, fixed = _sanitize(payload)
+    log.info(
+        f"  {file_path.name} — {len(payload)} item "
+        f"(dropped={dropped} no-address, fixed_rating={fixed}), "
+        f"{file_path.stat().st_size // 1024} KB"
+    )
 
     if dry_run:
         log.info("  [DRY-RUN] Skip POST, hanya validate file")
         return {"dry_run": True, "items": len(payload)}
 
     if not GOOGLE_MAPS_SYNC_API_KEY:
-        raise RuntimeError("GOOGLE_MAPS_SYNC_API_KEY kosong. Set di .env.local atau build args.")
+        raise RuntimeError("GOOGLE_MAPS_SYNC_API_KEY kosong. Set di .env.local.")
+    if not CAFES_SYNC_URL:
+        raise RuntimeError("CAFES_SYNC_URL kosong. Set di .env.local.")
 
-    url = f"{APP_URL.rstrip('/')}{SYNC_ENDPOINT}"
-    with file_path.open("rb") as f:
-        files = {"file": (file_path.name, f, "application/json")}
-        data = {"apiKey": GOOGLE_MAPS_SYNC_API_KEY}
-        with httpx.Client(timeout=300) as client:
-            r = client.post(url, files=files, data=data)
+    headers = {
+        "x-api-key": GOOGLE_MAPS_SYNC_API_KEY,
+        "Content-Type": "application/json",
+    }
+    body = {"cafes": cleaned}
 
-    log.info(f"  Status: {r.status_code}")
+    with httpx.Client(timeout=300) as client:
+        r = client.post(CAFES_SYNC_URL, headers=headers, json=body)
+
+    log.info(f"  HTTP {r.status_code}")
     try:
-        body = r.json()
+        resp = r.json()
     except Exception:
-        body = {"raw": r.text[:500]}
+        resp = {"raw": r.text[:500]}
 
     if r.status_code >= 400:
-        log.error(f"  ERROR: {body}")
+        log.error(f"  ERROR: {resp}")
         raise httpx.HTTPStatusError(
-            f"API {r.status_code}: {body}", request=r.request, response=r
+            f"API {r.status_code}: {resp}", request=r.request, response=r
         )
 
-    # Response dibungkus di {data: {...}}
-    result = body.get("data") if isinstance(body, dict) and "data" in body else body
+    data = resp.get("data", resp)
     log.info(
-        f"  Result: total={result.get('total')} inserted={result.get('inserted')} "
-        f"skipped={result.get('skipped')} errors={len(result.get('errors') or [])}"
+        f"  inserted={data.get('inserted')} skipped={data.get('skipped')} "
+        f"errors={len(data.get('errors') or [])}"
     )
-    if result.get("errors"):
-        for err in result["errors"][:5]:
+    if data.get("errors"):
+        for err in (data["errors"] or [])[:5]:
             log.warning(f"    - {err}")
-    return result
+    return data
 
 
 def sync_one_kelurahan(file_stem: str, force: bool = False) -> bool:

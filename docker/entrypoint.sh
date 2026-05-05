@@ -10,8 +10,8 @@ mkdir -p /app/data /app/logs
 if [ -z "$GOOGLE_MAPS_SYNC_API_KEY" ]; then
   echo "WARNING: GOOGLE_MAPS_SYNC_API_KEY kosong — sync ke API akan gagal" >&2
 fi
-if [ -z "$APP_URL" ]; then
-  echo "WARNING: APP_URL kosong" >&2
+if [ -z "$CAFES_SYNC_URL" ]; then
+  echo "WARNING: CAFES_SYNC_URL kosong — sync ke API akan gagal" >&2
 fi
 
 exec "$@"

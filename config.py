@@ -74,6 +74,9 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 # ============================================================================
 # Sync API (POST hasil scraping ke remote backend)
 # ============================================================================
+# CAFES_SYNC_URL: endpoint JSON utama (header x-api-key, body { cafes: [...] }).
+# APP_URL/SYNC_ENDPOINT legacy (multipart) — disisakan untuk backward compat.
+CAFES_SYNC_URL = os.getenv("CAFES_SYNC_URL", "")
 APP_URL = os.getenv("APP_URL", "https://api.hilman.imola.ai")
 GOOGLE_MAPS_SYNC_API_KEY = os.getenv("GOOGLE_MAPS_SYNC_API_KEY", "")
 SYNC_ENDPOINT = "/v1/web/sync-google-maps"
