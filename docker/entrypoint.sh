@@ -6,12 +6,9 @@ set -e
 # dengan flag --keyword.
 mkdir -p /app/data /app/logs
 
-# Sanity check env wajib
+# Sanity check — scrape mode tidak butuh API key, sync mode butuh.
 if [ -z "$GOOGLE_MAPS_SYNC_API_KEY" ]; then
-  echo "WARNING: GOOGLE_MAPS_SYNC_API_KEY kosong — sync ke API akan gagal" >&2
-fi
-if [ -z "$GOOGLE_MAPS_SYNC_API_KEY" ]; then
-  echo "WARNING: GOOGLE_MAPS_SYNC_API_KEY kosong — sync ke API akan gagal" >&2
+  echo "INFO: GOOGLE_MAPS_SYNC_API_KEY kosong — scrape OK, sync ke API akan error sampai di-set" >&2
 fi
 
 exec "$@"

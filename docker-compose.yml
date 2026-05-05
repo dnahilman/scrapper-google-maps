@@ -40,21 +40,29 @@
 #   - dev    → branch dev terbaru (staging)
 services:
   scraper:
-    image: ghcr.io/dnahilman/scrapper-google-maps:0.1.1
+    image: ghcr.io/dnahilman/scrapper-google-maps:0.1.4
     container_name: scrapper
+    # .env.local opsional — kalau gak ada, env defaults di bawah cukup buat scrape-only.
+    # Hanya di-load kalau exists (compose v2.24+).
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
     environment:
-      # Default values — di-override oleh .env.local kalau ada
+      # Scrape behavior
       - HEADLESS=${HEADLESS:-true}
-      - MIN_DELAY_SEC=${MIN_DELAY_SEC:-5}
-      - MAX_DELAY_SEC=${MAX_DELAY_SEC:-12}
+      - MIN_DELAY_SEC=${MIN_DELAY_SEC:-15}
+      - MAX_DELAY_SEC=${MAX_DELAY_SEC:-30}
       - MAX_REVIEWS_PER_SHOP=${MAX_REVIEWS_PER_SHOP:-200}
       - MAX_REVIEW_AGE_DAYS=${MAX_REVIEW_AGE_DAYS:-730}
       - SKIP_EMPTY_REVIEWS=${SKIP_EMPTY_REVIEWS:-true}
       - SORT_REVIEWS_BY_NEWEST=${SORT_REVIEWS_BY_NEWEST:-true}
       - MAX_CAPTCHA_RETRY=${MAX_CAPTCHA_RETRY:-2}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Sync target endpoints — kosong default. Set via .env.local saat siap sync.
+      - CAFE_SYNC_URL=${CAFE_SYNC_URL:-}
+      - BARBERSHOP_SYNC_URL=${BARBERSHOP_SYNC_URL:-}
+      # API key — empty default. Sync akan error kalau dipanggil tanpa override.
+      - GOOGLE_MAPS_SYNC_API_KEY=${GOOGLE_MAPS_SYNC_API_KEY:-}
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs

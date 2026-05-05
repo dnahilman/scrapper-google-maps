@@ -67,13 +67,15 @@ async def run(
 ) -> None:
     init_db()
     items = filter_kelurahan(kelurahan_filter)
-    if resume:
-        items = [k for k in items if not is_done(k["kelurahan"])]
+    # PENTING: shard dulu, baru resume. Partition harus dihitung dari list lengkap
+    # (posisi absolut) supaya disjoint antar VPS walau progress.db state diverge.
     if shard:
         n, m = (int(x) for x in shard.split("/"))
         if not (1 <= n <= m):
             raise ValueError(f"Shard {shard} invalid: butuh 1 <= K <= N")
         items = items[(n - 1) :: m]
+    if resume:
+        items = [k for k in items if not is_done(k["kelurahan"])]
     log.info(
         f"[keyword={config.get_keyword()}] Akan scrape {len(items)} kelurahan"
         + (f" (limit {limit} place/kelurahan)" if limit else "")
@@ -145,12 +147,12 @@ def main() -> None:
 
     if args.dry_run:
         items = filter_kelurahan(args.kelurahan)
-        if args.resume:
-            init_db()
-            items = [k for k in items if not is_done(k["kelurahan"])]
         if args.shard:
             n, m = (int(x) for x in args.shard.split("/"))
             items = items[(n - 1) :: m]
+        if args.resume:
+            init_db()
+            items = [k for k in items if not is_done(k["kelurahan"])]
         for k in items:
             print(f"  - {k['kelurahan']} ({k['kecamatan']})")
         print(f"\nTotal: {len(items)} kelurahan")
