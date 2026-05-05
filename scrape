@@ -50,6 +50,7 @@ Container & logs:
 Scraping:
   run <keyword> [extra args]    Jalankan scraper (background, --resume by default)
   run-sync <keyword>            Jalankan scraper + auto-sync (background, --resume)
+  run-parallel <kw> N [--max M] Spawn N shard paralel (round-robin), --max batas concurrent
   stop                          Kill semua proses scraper.py yang sedang jalan
 
 Sync:
@@ -111,6 +112,31 @@ cmd_run_sync() {
   echo "Menjalankan scraper keyword=$keyword + auto-sync (background, --resume) ..."
   _execd python scripts/scraper.py --keyword "$keyword" --resume --auto-sync "$@"
   echo "OK. Pantau log: ./scrape logfile $keyword"
+}
+
+cmd_run_parallel() {
+  local keyword="$1"; shift
+  local n="${1:-5}"; shift || true
+  local max="$n"
+  if [ "$1" = "--max" ]; then max="$2"; shift 2; fi
+  _require_keyword "$keyword"
+
+  local started=0
+  echo "Target $n shard untuk keyword=$keyword (background, --resume, max=$max) ..."
+  for i in $(seq 1 "$n"); do
+    if _exec pgrep -f "shard $i/$n" >/dev/null 2>&1; then
+      echo "  Shard $i/$n: SUDAH JALAN, skip"
+      continue
+    fi
+    if [ "$started" -ge "$max" ]; then
+      echo "  Shard $i/$n: skip (max=$max tercapai, jalankan manual nanti)"
+      continue
+    fi
+    _execd python scripts/scraper.py --keyword "$keyword" --resume --shard "$i/$n"
+    echo "  Shard $i/$n: started"
+    started=$((started + 1))
+  done
+  echo "OK. Pantau: ./scrape ps  |  ./scrape logfile $keyword"
 }
 
 cmd_stop() {
@@ -188,6 +214,7 @@ case "${1:-help}" in
   logfile)          shift; cmd_logfile "$@" ;;
   run)              shift; cmd_run "$@" ;;
   run-sync)         shift; cmd_run_sync "$@" ;;
+  run-parallel)     shift; cmd_run_parallel "$@" ;;
   stop)             cmd_stop ;;
   sync)             shift; cmd_sync "$@" ;;
   sync-one)         shift; cmd_sync_one "$@" ;;

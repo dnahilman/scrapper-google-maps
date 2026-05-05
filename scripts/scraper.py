@@ -58,14 +58,26 @@ async def scrape_kelurahan(context, kel: dict, limit: int | None = None) -> int:
         await page.close()
 
 
-async def run(kelurahan_filter: str | None, resume: bool, limit: int | None, auto_sync: bool = False) -> None:
+async def run(
+    kelurahan_filter: str | None,
+    resume: bool,
+    limit: int | None,
+    auto_sync: bool = False,
+    shard: str | None = None,
+) -> None:
     init_db()
     items = filter_kelurahan(kelurahan_filter)
     if resume:
         items = [k for k in items if not is_done(k["kelurahan"])]
+    if shard:
+        n, m = (int(x) for x in shard.split("/"))
+        if not (1 <= n <= m):
+            raise ValueError(f"Shard {shard} invalid: butuh 1 <= K <= N")
+        items = items[(n - 1) :: m]
     log.info(
         f"[keyword={config.get_keyword()}] Akan scrape {len(items)} kelurahan"
         + (f" (limit {limit} place/kelurahan)" if limit else "")
+        + (f" [SHARD {shard}]" if shard else "")
         + (" [AUTO-SYNC]" if auto_sync else "")
         + f" → output: {config.output_dir()}"
     )
@@ -122,6 +134,12 @@ def main() -> None:
         action="store_true",
         help="Setelah tiap kelurahan selesai scrape, auto-POST ke API backend.",
     )
+    parser.add_argument(
+        "--shard",
+        default=None,
+        help="Bagi kelurahan ke N shard, jalankan shard ke-K. Format: K/N (mis. 1/5). "
+             "Round-robin: shard ambil setiap kelurahan ke-N mulai index K-1.",
+    )
     args = parser.parse_args()
     config.set_keyword(args.keyword)
 
@@ -130,13 +148,16 @@ def main() -> None:
         if args.resume:
             init_db()
             items = [k for k in items if not is_done(k["kelurahan"])]
+        if args.shard:
+            n, m = (int(x) for x in args.shard.split("/"))
+            items = items[(n - 1) :: m]
         for k in items:
             print(f"  - {k['kelurahan']} ({k['kecamatan']})")
         print(f"\nTotal: {len(items)} kelurahan")
         return
 
     try:
-        asyncio.run(run(args.kelurahan, args.resume, args.limit, args.auto_sync))
+        asyncio.run(run(args.kelurahan, args.resume, args.limit, args.auto_sync, args.shard))
     except KeyboardInterrupt:
         log.warning("Interrupted by user. Progress tersimpan, lanjut dengan --resume")
         sys.exit(130)
