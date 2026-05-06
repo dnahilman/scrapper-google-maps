@@ -37,9 +37,10 @@ cd /opt/scrapper
 sudo chown -R diosone:diosone /opt/scrapper/data
 mkdir -p data/cafe data/barbershop logs
 
-# 3. Fetch latest docker-compose.yml + scrape dari GitHub (branch dev)
+# 3. Fetch latest docker-compose.yml + scrape + seed dari GitHub (branch dev)
 curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/docker-compose.yml
 curl -fsSL -o scrape https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/scrape
+curl -fsSL -o data/kelurahan_bandung.json https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/data/kelurahan_bandung.json
 chmod +x scrape
 
 # 4. Pull image + start container (.env.local opsional, gak butuh untuk scrape-only)
@@ -131,7 +132,7 @@ cd /opt/scrapper
 mkdir -p data/cafe data/barbershop logs
 ```
 
-### 3. Fetch `docker-compose.yml` + `scrape` helper dari GitHub (branch dev)
+### 3. Fetch `docker-compose.yml` + `scrape` + seed kelurahan dari GitHub (branch dev)
 
 ```bash
 cd /opt/scrapper
@@ -143,9 +144,13 @@ curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/dnahilman/scr
 curl -fsSL -o scrape https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/scrape
 chmod +x scrape
 
+# Seed kelurahan (151 kelurahan Bandung) — WAJIB ada di host, image gak bawa
+curl -fsSL -o data/kelurahan_bandung.json https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/data/kelurahan_bandung.json
+
 # Verify
-head -20 docker-compose.yml  # cek image tag = 0.1.4
-./scrape help                # cek scrape helper jalan
+head -20 docker-compose.yml                                          # cek image tag = 0.1.4
+./scrape help                                                        # cek scrape helper jalan
+python3 -c "import json; print(len(json.load(open('data/kelurahan_bandung.json'))))"  # expect: 151
 ```
 
 ### 4. Copy `progress.db` baseline dari local
