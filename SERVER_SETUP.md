@@ -37,9 +37,9 @@ cd /opt/scrapper
 sudo chown -R diosone:diosone /opt/scrapper/data
 mkdir -p data/cafe data/barbershop logs
 
-# 3. Fetch latest docker-compose.yml + scrape dari GitHub
-curl -O https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/dev/docker-compose.yml
-curl -O https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/dev/scrape
+# 3. Fetch latest docker-compose.yml + scrape dari GitHub (branch dev)
+curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/docker-compose.yml
+curl -fsSL -o scrape https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/scrape
 chmod +x scrape
 
 # 4. Pull image + start container (.env.local opsional, gak butuh untuk scrape-only)
@@ -129,29 +129,23 @@ sudo mkdir -p /opt/scrapper
 sudo chown -R dios:dios /opt/scrapper
 cd /opt/scrapper
 mkdir -p data/cafe data/barbershop logs
-
-# Pastikan Docker terinstall
-docker --version || sudo apt update && sudo apt install -y docker.io docker-compose-plugin
-
-# (Optional) Install tmux untuk monitoring session yang persisten
-sudo apt install -y tmux
 ```
 
-### 3. Fetch `docker-compose.yml` + `scrape` helper dari GitHub
+### 3. Fetch `docker-compose.yml` + `scrape` helper dari GitHub (branch dev)
 
 ```bash
 cd /opt/scrapper
 
 # docker-compose.yml (image v0.1.4, container_name=scrapper, env defaults built-in)
-curl -O https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/dev/docker-compose.yml
+curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/docker-compose.yml
 
 # scrape helper CLI
-curl -O https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/dev/scrape
+curl -fsSL -o scrape https://raw.githubusercontent.com/dnahilman/scrapper-google-maps/refs/heads/dev/scrape
 chmod +x scrape
 
 # Verify
-cat docker-compose.yml | head -20  # cek image tag = 0.1.4
-./scrape help                      # cek scrape helper jalan
+head -20 docker-compose.yml  # cek image tag = 0.1.4
+./scrape help                # cek scrape helper jalan
 ```
 
 ### 4. Copy `progress.db` baseline dari local
@@ -202,18 +196,16 @@ docker exec -d scrapper python scripts/scraper.py --keyword barbershop --resume 
 # Harus tampil 3 baris scraper.py
 ```
 
-### 8. (Optional) Monitor di tmux
+### 8. Monitor progress
 
 ```bash
-tmux new -s monitor
-# Di dalam tmux:
+# One-shot status check
+./scrape ps
+./scrape progress cafe
+./scrape progress barbershop
+
+# Auto-refresh tiap 10 menit (Ctrl+C untuk stop)
 watch -n 600 "./scrape ps; echo; ./scrape progress cafe; echo; ./scrape progress barbershop"
-# Ctrl+B D untuk detach (session tetap jalan walau SSH disconnect)
-```
-
-Re-attach kapan saja:
-```bash
-tmux attach -t monitor
 ```
 
 ---
