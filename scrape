@@ -6,14 +6,14 @@
 
 set -e
 
-CONTAINER="scrapper-cafe"
+CONTAINER="${SCRAPPER_CONTAINER:-scrapper}"
 COMPOSE_FILE="docker-compose.yml"
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
 _exec()   { docker exec "$CONTAINER" "$@"; }
 _execd()  { docker exec -d "$CONTAINER" "$@"; }
-_py()     { _exec python "$@"; }
+_py()     { docker exec -i "$CONTAINER" python "$@"; }
 
 _require_keyword() {
   if [ -z "$1" ]; then
