@@ -12,6 +12,20 @@ Scraper Google Maps untuk mengumpulkan data **place** (cafe, barbershop, kuliner
 
 ---
 
+## Web UI (FastAPI + Svelte)
+
+Single Docker image bundles **FastAPI** (control plane API) + **Svelte** (UI ringan, no SvelteKit). Setelah `docker compose up -d`, buka `http://localhost:8000`:
+
+- **Dashboard** — progress per keyword (done/total), KPI active jobs, data dir size
+- **Jobs** — start/stop scrape job dengan param keyword, shard, kelurahan filter, limit, resume
+- **Files** — browse output JSON per keyword + preview + download
+- **Logs** — live tail (SSE) per logfile / per job, dengan filter substring & auto-scroll
+- **Health indicator** — dot pulse di header, polling `/api/health` setiap 10 detik
+
+API docs auto-generated di `/docs` (Swagger UI). Bash wrapper `./scrape` lama tetap bisa dipakai parallel — UI dan CLI share SQLite progress.db lewat WAL mode.
+
+> Frontend di-build di stage 1 (Node) lalu di-serve oleh FastAPI dari `web/static`. Tidak ada Node runtime di production image.
+
 ## Features
 
 - **Multi-keyword** — `--keyword cafe`, `--keyword barbershop`, `--keyword resto`, dll. Storage isolated per keyword (`data/<keyword>/`).
