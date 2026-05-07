@@ -61,8 +61,14 @@
       <span class="dot"></span>
       <span>{label}</span>
     </span>
-    <button class="theme-toggle" type="button" on:click={toggleTheme} title="Toggle theme">
-      {$theme === 'dark' ? '☾' : '☼'}
+    <button
+      class="theme-toggle"
+      type="button"
+      on:click={toggleTheme}
+      aria-label="Toggle theme (currently {$theme})"
+      title="Toggle theme"
+    >
+      <span aria-hidden="true">{$theme === 'dark' ? '☾' : '☼'}</span>
     </button>
   </div>
 </header>

@@ -1,92 +1,224 @@
-/* Terminal green + dark theme untuk Scrapper Web UI.
-   Dark mode default. Light mode via data-theme="light" di <html>.
-   Accent: terminal green #22c55e / #4ade80. */
+/* Pure green terminal theme — ZERO blue.
+   Dark default. Light via data-theme="light" pada <html>.
+   Override 10 token Pico primary + 10 token secondary supaya tidak ada
+   default biru Pico (#0172ad / #525f7a) yang bocor ke button bg, border,
+   form focus, progress bar, switch, dll. */
 
 :root {
+  /* ===== Typography & spacing ===== */
   --pico-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
   --pico-font-size: 15px;
   --pico-line-height: 1.55;
-  --pico-border-radius: 12px;
+  --pico-border-radius: 10px;
   --pico-spacing: 1rem;
   --pico-form-element-spacing-vertical: 0.6rem;
   --pico-form-element-spacing-horizontal: 0.85rem;
 
-  /* Accent green tokens (shared) */
-  --accent: #22c55e;
-  --accent-light: #4ade80;
-  --accent-dim: rgba(34, 197, 94, 0.08);
-  --accent-dim-active: rgba(34, 197, 94, 0.12);
-  --accent-border: rgba(34, 197, 94, 0.3);
-  --accent-focus: rgba(34, 197, 94, 0.25);
+  /* ===== Brand green palette (shared) ===== */
+  --green-50:  #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;  /* secondary dark */
+  --green-400: #4ade80;  /* accent-light, secondary light */
+  --green-500: #22c55e;  /* primary dark */
+  --green-600: #16a34a;  /* primary light, hover dark */
+  --green-700: #15803d;  /* hover light */
+  --green-800: #166534;
+  --green-900: #14532d;
+
+  /* ===== Status semantic ===== */
+  --status-success: #22c55e;
+  --status-warning: #eab308;
+  --status-warning-light: #facc15;
+  --status-danger: #ef4444;
+  --status-danger-dark: #dc2626;
+  --status-neutral: #94a3b8;
+
+  /* ===== Tinted accent layers (dipakai untuk hover/active background) ===== */
+  --accent-tint-1: rgba(34, 197, 94, 0.06);
+  --accent-tint-2: rgba(34, 197, 94, 0.10);
+  --accent-tint-3: rgba(34, 197, 94, 0.16);
+  --accent-tint-4: rgba(34, 197, 94, 0.24);
+  --accent-border: rgba(34, 197, 94, 0.32);
+  --accent-focus-ring: rgba(34, 197, 94, 0.30);
 }
 
-/* ======== Dark mode (default) ======== */
+/* ============================================================
+   DARK MODE (default)
+   ============================================================ */
 [data-theme='dark'],
 :root:not([data-theme='light']) {
-  --bg: #0d0d0d;
-  --surface: #141414;
-  --surface-inset: #0a0a0a;
-  --border: #2a2a2a;
-  --text: #e2e8f0;
-  --text-muted: #64748b;
+  /* Surface scale */
+  --bg:            #0a0a0a;
+  --surface:       #111111;
+  --surface-2:     #161616;
+  --surface-inset: #080808;
+  --border:        #1f1f1f;
+  --border-strong: #2a2a2a;
+  --text:          #e5e7eb;
+  --text-strong:   #ffffff;
+  --text-muted:    #6b7280;
+  --text-faint:    #4b5563;
 
+  /* Aliases */
+  --accent:            var(--green-500);
+  --accent-light:      var(--green-400);
+  --accent-dim:        var(--accent-tint-2);
+  --accent-dim-active: var(--accent-tint-3);
+
+  /* Pico bridge — basic */
   --pico-background-color: var(--bg);
   --pico-color: var(--text);
+  --pico-h1-color: var(--text-strong);
+  --pico-h2-color: var(--text-strong);
+  --pico-h3-color: var(--text-strong);
+  --pico-h4-color: var(--text-strong);
+  --pico-h5-color: var(--text-strong);
+  --pico-h6-color: var(--text-strong);
   --pico-card-background-color: var(--surface);
   --pico-card-border-color: var(--border);
   --pico-card-sectioning-background-color: var(--surface-inset);
   --pico-muted-color: var(--text-muted);
   --pico-muted-border-color: var(--border);
-  --pico-primary: var(--accent);
-  --pico-primary-hover: var(--accent-light);
-  --pico-primary-focus: var(--accent-focus);
-  --pico-primary-inverse: #0d0d0d;
-  --pico-secondary: #4b5563;
-  --pico-secondary-hover: #6b7280;
-  --pico-form-element-background-color: #111111;
-  --pico-form-element-border-color: var(--border);
-  --pico-form-element-active-border-color: var(--accent);
-  --pico-form-element-focus-color: var(--accent-focus);
-  --pico-code-background-color: #080808;
-  --pico-code-color: #d1fae5;
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-sidebar: inset -1px 0 0 var(--border), 4px 0 12px rgba(0, 0, 0, 0.3);
+
+  /* === PRIMARY (10 tokens, ALL green) === */
+  --pico-primary:                  var(--green-500);
+  --pico-primary-background:       var(--green-500);
+  --pico-primary-border:           var(--green-500);
+  --pico-primary-underline:        rgba(34, 197, 94, 0.5);
+  --pico-primary-hover:            var(--green-400);
+  --pico-primary-hover-background: var(--green-600);
+  --pico-primary-hover-border:     var(--green-600);
+  --pico-primary-hover-underline:  var(--green-400);
+  --pico-primary-focus:            var(--accent-focus-ring);
+  --pico-primary-inverse:          #06140b;
+
+  /* === SECONDARY (light green tint, NOT slate-blue) === */
+  --pico-secondary:                  var(--green-300);
+  --pico-secondary-background:       rgba(134, 239, 172, 0.12);
+  --pico-secondary-border:           rgba(134, 239, 172, 0.30);
+  --pico-secondary-underline:        rgba(134, 239, 172, 0.45);
+  --pico-secondary-hover:            var(--green-200);
+  --pico-secondary-hover-background: rgba(134, 239, 172, 0.20);
+  --pico-secondary-hover-border:     rgba(134, 239, 172, 0.50);
+  --pico-secondary-hover-underline:  var(--green-200);
+  --pico-secondary-focus:            rgba(134, 239, 172, 0.25);
+  --pico-secondary-inverse:          #06140b;
+
+  /* Form elements */
+  --pico-form-element-background-color:        #0e0e0e;
+  --pico-form-element-border-color:            var(--border-strong);
+  --pico-form-element-color:                   var(--text);
+  --pico-form-element-active-background-color: #0e0e0e;
+  --pico-form-element-active-border-color:     var(--green-500);
+  --pico-form-element-focus-color:             var(--accent-focus-ring);
+  --pico-form-element-placeholder-color:       var(--text-faint);
+  --pico-form-element-disabled-background-color: #0a0a0a;
+  --pico-form-element-disabled-border-color:     var(--border);
+  --pico-form-element-disabled-opacity:          0.5;
+
+  /* Progress / switch / range — auto-green via primary-background */
+  --pico-progress-background-color: var(--surface-2);
+  --pico-switch-background-color:   var(--surface-2);
+  --pico-switch-color:               #ffffff;
+  --pico-range-active-border-color: var(--green-500);
+
+  /* Code */
+  --pico-code-background-color: #060606;
+  --pico-code-color:            var(--green-200);
+  --pico-code-kbd-background-color: var(--green-500);
+  --pico-code-kbd-color:        #06140b;
+
+  /* Shadows */
+  --shadow-soft:     0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-sidebar:  inset -1px 0 0 var(--border), 4px 0 12px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 28px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-/* ======== Light mode ======== */
+/* ============================================================
+   LIGHT MODE
+   ============================================================ */
 [data-theme='light'] {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface-inset: #f1f5f9;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --text-muted: #64748b;
+  --bg:            #fafafa;
+  --surface:       #ffffff;
+  --surface-2:     #f4f4f5;
+  --surface-inset: #f5f5f5;
+  --border:        #e5e7eb;
+  --border-strong: #d4d4d8;
+  --text:          #0f172a;
+  --text-strong:   #020617;
+  --text-muted:    #64748b;
+  --text-faint:    #94a3b8;
+
+  --accent:            var(--green-600);
+  --accent-light:      var(--green-500);
+  --accent-dim:        rgba(22, 163, 74, 0.08);
+  --accent-dim-active: rgba(22, 163, 74, 0.14);
 
   --pico-background-color: var(--bg);
   --pico-color: var(--text);
+  --pico-h1-color: var(--text-strong);
+  --pico-h2-color: var(--text-strong);
+  --pico-h3-color: var(--text-strong);
+  --pico-h4-color: var(--text-strong);
+  --pico-h5-color: var(--text-strong);
+  --pico-h6-color: var(--text-strong);
   --pico-card-background-color: var(--surface);
   --pico-card-border-color: var(--border);
   --pico-card-sectioning-background-color: var(--surface-inset);
   --pico-muted-color: var(--text-muted);
   --pico-muted-border-color: var(--border);
-  --pico-primary: #16a34a;
-  --pico-primary-hover: #15803d;
-  --pico-primary-focus: rgba(22, 163, 74, 0.25);
-  --pico-primary-inverse: #fff;
-  --pico-secondary: #64748b;
-  --pico-secondary-hover: #475569;
-  --pico-form-element-background-color: var(--surface);
-  --pico-form-element-border-color: var(--border);
-  --pico-form-element-active-border-color: #16a34a;
-  --pico-form-element-focus-color: rgba(22, 163, 74, 0.25);
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(15, 23, 42, 0.08);
-  --shadow-sidebar: inset -1px 0 0 var(--border);
+
+  /* PRIMARY light: darker green untuk AA contrast */
+  --pico-primary:                  var(--green-700);
+  --pico-primary-background:       var(--green-700);
+  --pico-primary-border:           var(--green-700);
+  --pico-primary-underline:        rgba(21, 128, 61, 0.5);
+  --pico-primary-hover:            var(--green-800);
+  --pico-primary-hover-background: var(--green-800);
+  --pico-primary-hover-border:     var(--green-800);
+  --pico-primary-hover-underline:  var(--green-800);
+  --pico-primary-focus:            rgba(22, 163, 74, 0.25);
+  --pico-primary-inverse:          #ffffff;
+
+  /* SECONDARY light: medium green tint */
+  --pico-secondary:                  var(--green-700);
+  --pico-secondary-background:       rgba(74, 222, 128, 0.18);
+  --pico-secondary-border:           rgba(74, 222, 128, 0.45);
+  --pico-secondary-underline:        rgba(22, 163, 74, 0.4);
+  --pico-secondary-hover:            var(--green-800);
+  --pico-secondary-hover-background: rgba(74, 222, 128, 0.28);
+  --pico-secondary-hover-border:     rgba(74, 222, 128, 0.55);
+  --pico-secondary-hover-underline:  var(--green-800);
+  --pico-secondary-focus:            rgba(74, 222, 128, 0.25);
+  --pico-secondary-inverse:          #ffffff;
+
+  --pico-form-element-background-color:        var(--surface);
+  --pico-form-element-border-color:            var(--border-strong);
+  --pico-form-element-color:                   var(--text);
+  --pico-form-element-active-background-color: var(--surface);
+  --pico-form-element-active-border-color:     var(--green-600);
+  --pico-form-element-focus-color:             rgba(22, 163, 74, 0.25);
+  --pico-form-element-placeholder-color:       var(--text-faint);
+
+  --pico-progress-background-color: var(--surface-2);
+  --pico-switch-background-color:   #d4d4d8;
+  --pico-switch-color:               #ffffff;
+  --pico-range-active-border-color: var(--green-600);
+
+  --pico-code-background-color: #f0fdf4;
+  --pico-code-color:            #14532d;
+
+  --shadow-soft:     0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-sidebar:  inset -1px 0 0 var(--border), 2px 0 6px rgba(15, 23, 42, 0.05);
+  --shadow-elevated: 0 8px 24px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ============================================================
+   Base
+   ============================================================ */
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -94,23 +226,43 @@ body {
   font-family: var(--pico-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--pico-background-color);
-  color: var(--pico-color);
+  background: var(--bg);
+  color: var(--text);
 }
 
-button,
-input,
-select,
-textarea {
-  transition: all 0.15s ease;
+button, input, select, textarea {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 article {
+  background: var(--surface);
   box-shadow: var(--shadow-soft);
-  border: 1px solid var(--pico-card-border-color);
+  border: 1px solid var(--border);
 }
 
-/* ======== Layout shell ======== */
+[data-theme='light'] article {
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* ============================================================
+   DEFENSIVE ANTI-BLUE — sidebar nav <div role="button">
+   tidak boleh inherit Pico [role=button] biru
+   ============================================================ */
+.app-sidebar [role='button'] {
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  --pico-primary-background: transparent;
+  --pico-primary-hover-background: transparent;
+  --pico-primary-border: transparent;
+}
+
+/* ============================================================
+   Layout shell
+   ============================================================ */
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -122,15 +274,18 @@ article {
   overflow: hidden;
 }
 
-/* ======== Header ======== */
+/* ============================================================
+   Header
+   ============================================================ */
 .app-header {
   grid-area: header;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 1.25rem;
-  background: var(--pico-card-background-color);
-  border-bottom: 1px solid var(--pico-muted-border-color);
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -139,12 +294,12 @@ article {
 .app-header .breadcrumb {
   font-weight: 600;
   font-size: 0.95rem;
-  color: var(--pico-color);
+  color: var(--text);
   margin: 0;
 }
 
 .app-header .breadcrumb .muted {
-  color: var(--pico-muted-color);
+  color: var(--text-muted);
   font-weight: 400;
   margin: 0 0.4rem;
 }
@@ -152,17 +307,106 @@ article {
 .app-header .right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  height: 100%;
 }
 
-/* ======== Sidebar — inset style ======== */
+/* Theme toggle — fully isolated dari Pico button defaults */
+.theme-toggle {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  --pico-primary-background: transparent;
+  --pico-primary-hover-background: transparent;
+  --pico-primary-border: transparent;
+  --pico-primary: var(--text);
+}
+.theme-toggle:hover {
+  background: var(--accent-tint-2) !important;
+  border-color: var(--accent-border) !important;
+  color: var(--green-400);
+}
+[data-theme='light'] .theme-toggle:hover { color: var(--green-700); }
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Health indicator pill */
+.health-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.32rem 0.75rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  height: 30px;
+  line-height: 1;
+}
+.health-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.health-indicator.healthy {
+  color: var(--green-400);
+  border-color: var(--accent-border);
+}
+.health-indicator.healthy .dot {
+  background: var(--green-500);
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  animation: pulse 1.8s infinite;
+}
+.health-indicator.down {
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.health-indicator.down .dot { background: var(--status-danger); }
+.health-indicator.checking {
+  color: #fcd34d;
+  border-color: rgba(234, 179, 8, 0.35);
+}
+.health-indicator.checking .dot {
+  background: var(--status-warning);
+  animation: pulse 1.4s infinite;
+}
+[data-theme='light'] .health-indicator.healthy { color: var(--green-700); }
+[data-theme='light'] .health-indicator.down    { color: #b91c1c; }
+[data-theme='light'] .health-indicator.checking{ color: #a16207; }
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* ============================================================
+   Sidebar — inset feel
+   ============================================================ */
 .app-sidebar {
   grid-area: sidebar;
-  /* Slightly darker than main content — inset feel */
-  background: var(--pico-card-sectioning-background-color);
+  background: var(--surface-inset);
   border-right: 1px solid var(--border);
   box-shadow: var(--shadow-sidebar);
-  padding: 1rem 0.5rem;
+  padding: 1rem 0.6rem;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -173,67 +417,89 @@ article {
 .app-sidebar .logo {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.4rem 0.75rem 1rem;
+  gap: 0.65rem;
+  padding: 0.4rem 0.75rem 1.1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   font-size: 1.05rem;
-  /* Logo text in accent green */
-  color: var(--accent);
+  color: var(--green-400);
 }
+[data-theme='light'] .app-sidebar .logo { color: var(--green-700); }
 
 .app-sidebar .logo-mark {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, var(--green-400), var(--green-600));
   display: grid;
   place-items: center;
-  color: #0d0d0d;
+  color: #06140b;
   font-weight: 800;
   font-size: 0.85rem;
   flex-shrink: 0;
 }
 
-/* Nav items */
+/* Nav item */
 .nav-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.55rem 0.85rem;
-  margin: 0.1rem 0;
+  margin: 0.15rem 0;
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.92rem;
   color: var(--text-muted);
+  background: transparent;
   border: 1px solid transparent;
   border-left: 3px solid transparent;
   user-select: none;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  /* Anti-blue defense */
+  --pico-primary-background: transparent;
+  --pico-primary-hover-background: transparent;
+  --pico-primary-border: transparent;
 }
-
 .nav-item:hover {
-  background: var(--accent-dim);
-  color: var(--pico-color);
+  background: var(--accent-tint-2);
+  color: var(--text);
 }
-
 .nav-item.active {
-  background: var(--accent-dim-active);
-  color: var(--pico-color);
-  border-left-color: var(--accent);
-  border-right-color: transparent;
-  border-top-color: transparent;
-  border-bottom-color: transparent;
-}
-
-.nav-item .badge {
-  background: rgba(34, 197, 94, 0.2);
-  color: var(--accent-light);
-  border-radius: 999px;
-  font-size: 0.72rem;
-  padding: 0.05rem 0.5rem;
+  background: var(--accent-tint-3);
+  color: var(--text-strong);
+  border-left-color: var(--green-500);
   font-weight: 600;
 }
+[data-theme='light'] .nav-item.active { border-left-color: var(--green-600); }
+
+.nav-item:focus-visible {
+  outline: 2px solid var(--accent-focus-ring);
+  outline-offset: -2px;
+}
+
+.nav-item .nav-icon {
+  margin-right: 0.55rem;
+  opacity: 0.75;
+  font-weight: 500;
+  width: 14px;
+  display: inline-block;
+  text-align: center;
+}
+.nav-item.active .nav-icon {
+  opacity: 1;
+  color: var(--green-400);
+}
+[data-theme='light'] .nav-item.active .nav-icon { color: var(--green-700); }
+
+.nav-item .badge {
+  background: var(--accent-tint-4);
+  color: var(--green-300);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.55rem;
+  font-weight: 600;
+}
+[data-theme='light'] .nav-item .badge { color: var(--green-800); }
 
 .app-sidebar .footer {
   margin-top: auto;
@@ -246,12 +512,14 @@ article {
   gap: 0.25rem;
 }
 
-/* ======== Main content ======== */
+/* ============================================================
+   Main
+   ============================================================ */
 .app-main {
   grid-area: main;
   overflow-y: auto;
   padding: 1.5rem 1.75rem;
-  background: var(--pico-background-color);
+  background: var(--bg);
 }
 
 .app-main > .container {
@@ -259,52 +527,9 @@ article {
   margin: 0 auto;
 }
 
-/* ======== Health indicator ======== */
-.health-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--pico-muted-border-color);
-}
-
-.health-indicator .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.health-indicator.healthy .dot {
-  background: var(--accent);
-  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
-  animation: pulse 1.8s infinite;
-}
-
-.health-indicator.down .dot {
-  background: #ef4444;
-}
-
-.health-indicator.checking .dot {
-  background: #eab308;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-  }
-}
-
-/* ======== Status pill ======== */
+/* ============================================================
+   Status pill
+   ============================================================ */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -315,25 +540,34 @@ article {
   font-weight: 600;
   border: 1px solid transparent;
 }
-
 .pill .dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
 }
 
-.pill.running     { background: rgba(34, 197, 94, 0.12);  color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
-.pill.running .dot { background: #4ade80; animation: pulse 1.8s infinite; }
-.pill.exited      { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.25); }
-.pill.exited .dot  { background: #94a3b8; }
-.pill.failed      { background: rgba(239, 68, 68, 0.12);  color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
-.pill.failed .dot  { background: #f87171; }
-.pill.done        { background: rgba(34, 197, 94, 0.1);   color: #4ade80; border-color: rgba(34, 197, 94, 0.25); }
-.pill.done .dot    { background: #4ade80; }
-.pill.in_progress { background: rgba(234, 179, 8, 0.12);  color: #facc15; border-color: rgba(234, 179, 8, 0.3); }
-.pill.in_progress .dot { background: #facc15; animation: pulse 1.8s infinite; }
+.pill.running       { background: rgba(34, 197, 94, 0.12);  color: var(--green-400); border-color: rgba(34, 197, 94, 0.3); }
+.pill.running .dot  { background: var(--green-400); animation: pulse 1.8s infinite; }
+.pill.exited        { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.25); }
+.pill.exited .dot   { background: #94a3b8; }
+.pill.failed        { background: rgba(239, 68, 68, 0.12);  color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+.pill.failed .dot   { background: #f87171; }
+.pill.done          { background: rgba(34, 197, 94, 0.10);  color: var(--green-400); border-color: rgba(34, 197, 94, 0.25); }
+.pill.done .dot     { background: var(--green-400); }
+.pill.in_progress   { background: rgba(234, 179, 8, 0.12);  color: var(--status-warning-light); border-color: rgba(234, 179, 8, 0.3); }
+.pill.in_progress .dot { background: var(--status-warning-light); animation: pulse 1.8s infinite; }
 
-/* ======== Cards / grids ======== */
+[data-theme='light'] .pill.running     { background: rgba(22, 163, 74, 0.12); color: var(--green-700); border-color: rgba(22, 163, 74, 0.3); }
+[data-theme='light'] .pill.running .dot{ background: var(--green-600); }
+[data-theme='light'] .pill.done        { background: rgba(22, 163, 74, 0.10); color: var(--green-700); border-color: rgba(22, 163, 74, 0.25); }
+[data-theme='light'] .pill.done .dot   { background: var(--green-600); }
+[data-theme='light'] .pill.exited      { background: rgba(100, 116, 139, 0.12); color: #475569; border-color: rgba(100, 116, 139, 0.3); }
+[data-theme='light'] .pill.failed      { background: rgba(239, 68, 68, 0.10); color: #b91c1c; border-color: rgba(239, 68, 68, 0.3); }
+[data-theme='light'] .pill.in_progress { background: rgba(234, 179, 8, 0.14); color: #a16207; border-color: rgba(234, 179, 8, 0.35); }
+
+/* ============================================================
+   Cards / KPI
+   ============================================================ */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -348,7 +582,7 @@ article {
 
 .kpi .label {
   font-size: 0.78rem;
-  color: var(--pico-muted-color);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -357,8 +591,9 @@ article {
   font-size: 1.65rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--accent-light);
+  color: var(--green-400);
 }
+[data-theme='light'] .kpi .value { color: var(--green-700); }
 
 .toolbar {
   display: flex;
@@ -375,46 +610,78 @@ article {
   align-items: center;
 }
 
-.muted {
-  color: var(--pico-muted-color);
-}
+.muted { color: var(--text-muted); }
 
-/* ======== Tables ======== */
-table {
-  font-size: 0.9rem;
-}
+/* ============================================================
+   Tables
+   ============================================================ */
+table { font-size: 0.9rem; }
 
 th {
   font-weight: 600;
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--pico-muted-color);
+  color: var(--text-muted);
 }
+[data-theme='light'] table th { border-bottom: 1px solid var(--border-strong); }
 
-/* ======== Buttons ======== */
-button.icon-btn {
-  padding: 0.35rem 0.7rem;
-  font-size: 0.8rem;
+/* ============================================================
+   Buttons — ghost, danger, icon-btn
+   Pico's primary-* tokens already green via dark/light blocks above,
+   so default <button> filled = green. Ghost & danger override.
+   ============================================================ */
+button.icon-btn,
+a.icon-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
   margin: 0;
   width: auto;
+  border-radius: 8px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
 }
+
+button.ghost,
+a.ghost {
+  background: transparent !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text) !important;
+  --pico-primary-background: transparent;
+  --pico-primary-hover-background: transparent;
+  --pico-primary-border: transparent;
+  --pico-primary: var(--text);
+}
+button.ghost:hover,
+a.ghost:hover {
+  background: var(--accent-tint-2) !important;
+  border-color: var(--accent-border) !important;
+  color: var(--green-400) !important;
+}
+[data-theme='light'] button.ghost:hover,
+[data-theme='light'] a.ghost:hover { color: var(--green-700) !important; }
 
 button.danger {
-  --pico-primary: #dc2626;
-  --pico-primary-hover: #ef4444;
-  --pico-primary-focus: rgba(220, 38, 38, 0.25);
-  --pico-primary-inverse: #fff;
+  background: var(--status-danger-dark) !important;
+  border-color: var(--status-danger-dark) !important;
+  color: #ffffff !important;
+  --pico-primary-background: var(--status-danger-dark);
+  --pico-primary-border: var(--status-danger-dark);
+  --pico-primary-hover-background: var(--status-danger);
+  --pico-primary-hover-border: var(--status-danger);
+  --pico-primary-inverse: #ffffff;
+}
+button.danger:hover {
+  background: var(--status-danger) !important;
+  border-color: var(--status-danger) !important;
 }
 
-button.ghost {
-  --pico-primary: transparent;
-  --pico-primary-hover: var(--accent-dim);
-  --pico-primary-inverse: var(--pico-color);
-  border: 1px solid var(--pico-muted-border-color);
-}
-
-/* ======== Log viewer ======== */
+/* ============================================================
+   Log viewer (terminal feel)
+   ============================================================ */
 .log-viewer {
   font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
   font-size: 0.82rem;
@@ -430,52 +697,46 @@ button.ghost {
   color: #a3e6bc;
 }
 
-.log-viewer .line {
-  animation: fadein 0.18s ease;
-}
-
+.log-viewer .line { animation: fadein 0.18s ease; }
 .log-viewer .line.error { color: #fca5a5; }
 .log-viewer .line.warn  { color: #fcd34d; }
 .log-viewer .line.info  { color: #a3e6bc; }
 .log-viewer .line.debug { color: #4b6557; }
+
+[data-theme='light'] .log-viewer {
+  background: #f8fafc;
+  color: var(--green-800);
+  border-color: var(--border);
+}
+[data-theme='light'] .log-viewer .line.error { color: #b91c1c; }
+[data-theme='light'] .log-viewer .line.warn  { color: #a16207; }
+[data-theme='light'] .log-viewer .line.info  { color: var(--green-700); }
+[data-theme='light'] .log-viewer .line.debug { color: #64748b; }
 
 @keyframes fadein {
   from { opacity: 0; transform: translateY(2px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ======== JSON viewer ======== */
+/* ============================================================
+   JSON viewer
+   ============================================================ */
 .json-viewer {
   font-family: 'JetBrains Mono', Consolas, monospace;
   font-size: 0.85rem;
-  background: var(--pico-card-sectioning-background-color);
+  background: var(--surface-inset);
   border-radius: 10px;
   padding: 1rem;
   max-height: 65vh;
   overflow: auto;
   border: 1px solid var(--border);
-  color: var(--pico-code-color, #d1fae5);
+  color: var(--green-200);
 }
+[data-theme='light'] .json-viewer { color: var(--green-800); }
 
-/* ======== Theme toggle ======== */
-.theme-toggle {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  cursor: pointer;
-  color: var(--pico-color);
-  display: grid;
-  place-items: center;
-}
-.theme-toggle:hover {
-  background: var(--accent-dim);
-  border-color: var(--accent-border);
-}
-
-/* ======== Responsive ======== */
+/* ============================================================
+   Responsive
+   ============================================================ */
 @media (max-width: 768px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -485,10 +746,6 @@ button.ghost {
       'main';
     overflow: auto;
   }
-  .app-sidebar {
-    display: none;
-  }
-  .app-main {
-    padding: 1rem;
-  }
+  .app-sidebar { display: none; }
+  .app-main { padding: 1rem; }
 }

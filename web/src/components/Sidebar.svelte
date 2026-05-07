@@ -37,7 +37,7 @@
         role="button"
         aria-current={$section === it.id ? 'page' : undefined}
       >
-        <span><span style="margin-right:.5rem;opacity:.7">{it.icon}</span>{it.label}</span>
+        <span><span class="nav-icon">{it.icon}</span>{it.label}</span>
         {#if it.id === 'jobs' && $activeJobsCount > 0}
           <span class="badge">{$activeJobsCount}</span>
         {/if}
