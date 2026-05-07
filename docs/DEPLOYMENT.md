@@ -167,8 +167,8 @@ chmod +x scrape
 ./scrape progress barbershop    # harus tampil: done = 7
 
 # 4. Spawn 2 shard (cafe 1/2 + barbershop 1/3)
-docker exec -d scrapper-cafe python scripts/scraper.py --keyword cafe --resume --shard 1/2
-docker exec -d scrapper-cafe python scripts/scraper.py --keyword barbershop --resume --shard 1/3
+docker exec -d scrapper-cafe python server/scripts/scraper.py --keyword cafe --resume --shard 1/2
+docker exec -d scrapper-cafe python server/scripts/scraper.py --keyword barbershop --resume --shard 1/3
 
 # 5. Verify proses jalan
 ./scrape ps
@@ -211,9 +211,9 @@ sed -i 's|CONTAINER="scrapper-cafe"|CONTAINER="scrapper-bandung"|' scrape
 ./scrape progress barbershop
 
 # 6. Spawn 3 shard
-docker exec -d scrapper-bandung python scripts/scraper.py --keyword cafe --resume --shard 2/2
-docker exec -d scrapper-bandung python scripts/scraper.py --keyword barbershop --resume --shard 2/3
-docker exec -d scrapper-bandung python scripts/scraper.py --keyword barbershop --resume --shard 3/3
+docker exec -d scrapper-bandung python server/scripts/scraper.py --keyword cafe --resume --shard 2/2
+docker exec -d scrapper-bandung python server/scripts/scraper.py --keyword barbershop --resume --shard 2/3
+docker exec -d scrapper-bandung python server/scripts/scraper.py --keyword barbershop --resume --shard 3/3
 
 # 7. Verify
 ./scrape ps
@@ -278,7 +278,7 @@ Recovery:
 2. Restart container untuk fresh browser fingerprint: `docker compose restart`
 3. Jalankan ulang shard yang berhenti (sama command, `--resume` otomatis skip yang sudah done):
    ```bash
-   docker exec -d <container> python scripts/scraper.py --keyword <kw> --resume --shard <K>/<N>
+   docker exec -d <container> python server/scripts/scraper.py --keyword <kw> --resume --shard <K>/<N>
    ```
 
 > Pakai IP/proxy berbeda per VPS sangat membantu — Server A pakai IP-nya, Server B pakai IP-nya. Total: kelurahan didistribusi via 2 IP berbeda → CAPTCHA risk jauh lebih rendah daripada 5 instance dari 1 IP.
@@ -314,10 +314,10 @@ rsync -avz "dios@<SERVER_B_IP>:/opt/scrapper/data/barbershop/" "data/barbershop/
 
 ```powershell
 # Cafe
-python scripts/sync.py --keyword cafe --all
+python server/scripts/sync.py --keyword cafe --all
 
 # Barbershop
-python scripts/sync.py --keyword barbershop --all
+python server/scripts/sync.py --keyword barbershop --all
 ```
 
 `sync.py` skip file yang sudah `done` di `sync_progress` table — aman dijalankan ulang. POST pakai JSON dispatch by keyword (lihat [src/sync_client.py](src/sync_client.py)).
