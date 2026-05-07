@@ -47,6 +47,6 @@
 
   <div class="footer">
     <span class="muted">Google Maps Scraper</span>
-    <span class="muted">v0.2.0</span>
+    <span class="muted">v0.1.4</span>
   </div>
 </aside>
