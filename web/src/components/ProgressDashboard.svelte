@@ -1,19 +1,24 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { api } from '../lib/api.js';
-  import { notify } from '../lib/stores.js';
+  import { api, type HealthResponse, type ProgressCounts } from '../lib/api.ts';
+  import { notify } from '../lib/stores.ts';
   import JobLauncher from './JobLauncher.svelte';
 
-  let keywords = [];
-  let summaries = {}; // keyword -> { counts, total }
-  let health = null;
-  let timer;
+  interface Summary {
+    counts: ProgressCounts;
+    total: number;
+  }
 
-  async function refresh() {
+  let keywords: string[] = [];
+  let summaries: Record<string, Summary> = {};
+  let health: HealthResponse | null = null;
+  let timer: ReturnType<typeof setInterval>;
+
+  async function refresh(): Promise<void> {
     try {
       health = await api.health();
       keywords = health.keywords || [];
-      const next = {};
+      const next: Record<string, Summary> = {};
       for (const kw of keywords) {
         try {
           const p = await api.progress(kw);
@@ -35,7 +40,7 @@
 
   onDestroy(() => clearInterval(timer));
 
-  function pct(c, t) {
+  function pct(c: number, t: number): number {
     if (!t) return 0;
     return Math.round((c / t) * 100);
   }
@@ -94,7 +99,7 @@
         <div style="margin-top:.5rem">
           <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem">
             <span class="muted">{s.counts.done} / {s.total} done</span>
-            <strong>{pct(s.counts.done, s.total)}%</strong>
+            <strong style="color:var(--accent)">{pct(s.counts.done, s.total)}%</strong>
           </div>
           <progress value={s.counts.done} max={s.total || 1}></progress>
         </div>

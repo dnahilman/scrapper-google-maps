@@ -1,26 +1,33 @@
-<script>
-  import { section, activeJobsCount } from '../lib/stores.js';
+<script lang="ts">
+  import { section, activeJobsCount, type Section } from '../lib/stores.ts';
 
-  const items = [
+  interface NavItem {
+    id: Section;
+    label: string;
+    icon: string;
+  }
+
+  const items: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '◐' },
-    { id: 'jobs', label: 'Jobs', icon: '▶' },
-    { id: 'files', label: 'Files', icon: '◫' },
-    { id: 'logs', label: 'Logs', icon: '≡' },
+    { id: 'jobs',      label: 'Jobs',      icon: '▶' },
+    { id: 'files',     label: 'Files',     icon: '◫' },
+    { id: 'logs',      label: 'Logs',      icon: '≡' },
   ];
 
-  function go(id) {
+  function go(id: Section): void {
     section.set(id);
   }
 </script>
 
 <aside class="app-sidebar">
   <div class="logo">
-    <span class="logo-mark">G</span>
+    <span class="logo-mark">S</span>
     <span>Scrapper</span>
   </div>
 
   <nav>
     {#each items as it}
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div
         class="nav-item"
         class:active={$section === it.id}
@@ -28,6 +35,7 @@
         on:keydown={(e) => e.key === 'Enter' && go(it.id)}
         tabindex="0"
         role="button"
+        aria-current={$section === it.id ? 'page' : undefined}
       >
         <span><span style="margin-right:.5rem;opacity:.7">{it.icon}</span>{it.label}</span>
         {#if it.id === 'jobs' && $activeJobsCount > 0}

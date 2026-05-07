@@ -1,17 +1,17 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-  import { api, fmtDate } from '../lib/api.js';
-  import { activeJobsCount, notify } from '../lib/stores.js';
+  import { api, fmtDate, type JobResponse } from '../lib/api.ts';
+  import { activeJobsCount, notify } from '../lib/stores.ts';
   import JobLauncher from './JobLauncher.svelte';
 
-  export let keywordFilter = null;
+  export let keywordFilter: string | null = null;
 
-  let jobs = [];
+  let jobs: JobResponse[] = [];
   let loading = true;
-  let timer;
-  const dispatch = createEventDispatcher();
+  let timer: ReturnType<typeof setInterval>;
+  const dispatch = createEventDispatcher<{ view: JobResponse }>();
 
-  async function refresh() {
+  async function refresh(): Promise<void> {
     try {
       jobs = await api.listJobs(keywordFilter);
       activeJobsCount.set(jobs.filter((j) => j.status === 'running').length);
@@ -22,18 +22,18 @@
     }
   }
 
-  async function stopJob(j) {
+  async function stopJob(j: JobResponse): Promise<void> {
     if (!confirm(`Stop job ${j.job_id} (${j.keyword} ${j.shard ?? ''})?`)) return;
     try {
       await api.stopJob(j.job_id);
       notify(`Job ${j.job_id} stopped`, 'success');
       await refresh();
     } catch (e) {
-      notify(`Gagal stop: ${e.message}`, 'error');
+      notify(`Gagal stop: ${(e as Error).message}`, 'error');
     }
   }
 
-  function uptime(started) {
+  function uptime(started: string): string {
     const ms = Date.now() - new Date(started).getTime();
     const s = Math.floor(ms / 1000);
     const h = Math.floor(s / 3600);

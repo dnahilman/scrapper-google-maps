@@ -1,14 +1,14 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { api, fmtBytes, fmtDate } from '../lib/api.js';
+  import { api, fmtBytes, fmtDate, type LogFile } from '../lib/api.ts';
   import LogViewer from './LogViewer.svelte';
 
-  let files = [];
-  let activeFile = null;
-  let url = null;
+  let files: LogFile[] = [];
+  let activeFile: string | null = null;
+  let url: string | null = null;
   let loading = true;
 
-  async function refresh() {
+  async function refresh(): Promise<void> {
     files = await api.listLogFiles();
     loading = false;
     if (!activeFile && files.length > 0) {
@@ -16,7 +16,7 @@
     }
   }
 
-  function pick(name) {
+  function pick(name: string): void {
     activeFile = name;
     url = api.fileLogStreamUrl(name, 300);
   }
@@ -42,6 +42,7 @@
         <table style="margin:0;font-size:.85rem">
           <tbody>
             {#each files as f (f.name)}
+              <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
               <tr
                 on:click={() => pick(f.name)}
                 style="cursor:pointer"
@@ -67,9 +68,9 @@
 
 <style>
   tr.active {
-    background: rgba(59, 130, 246, 0.12);
+    background: rgba(34, 197, 94, 0.1);
   }
   tr:hover {
-    background: rgba(59, 130, 246, 0.06);
+    background: rgba(34, 197, 94, 0.05);
   }
 </style>

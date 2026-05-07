@@ -1,14 +1,14 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { api, fmtBytes, fmtDate } from '../lib/api.js';
-  import { notify } from '../lib/stores.js';
+  import { api, fmtBytes, fmtDate, type FileInfo } from '../lib/api.ts';
+  import { notify } from '../lib/stores.ts';
 
-  let keywords = [];
-  let activeKw = null;
-  let files = [];
+  let keywords: string[] = [];
+  let activeKw: string | null = null;
+  let files: FileInfo[] = [];
   let loading = false;
-  let activeFile = null;
-  let activeContent = null;
+  let activeFile: string | null = null;
+  let activeContent: unknown = null;
   let loadingFile = false;
 
   onMount(async () => {
@@ -16,7 +16,7 @@
     if (keywords.length) selectKw(keywords[0]);
   });
 
-  async function selectKw(kw) {
+  async function selectKw(kw: string): Promise<void> {
     activeKw = kw;
     activeFile = null;
     activeContent = null;
@@ -24,20 +24,25 @@
     try {
       files = await api.files(kw);
     } catch (e) {
-      notify(`Gagal load files: ${e.message}`, 'error');
+      notify(`Gagal load files: ${(e as Error).message}`, 'error');
       files = [];
     } finally {
       loading = false;
     }
   }
 
-  async function selectFile(name) {
+  function handleKwChange(e: Event): void {
+    selectKw((e.target as HTMLSelectElement).value);
+  }
+
+  async function selectFile(name: string): Promise<void> {
+    if (!activeKw) return;
     activeFile = name;
     loadingFile = true;
     try {
       activeContent = await api.file(activeKw, name);
     } catch (e) {
-      notify(`Gagal load file: ${e.message}`, 'error');
+      notify(`Gagal load file: ${(e as Error).message}`, 'error');
       activeContent = null;
     } finally {
       loadingFile = false;
@@ -49,7 +54,7 @@
   <h3 style="margin:0">Files</h3>
   <div class="actions">
     {#if keywords.length > 0}
-      <select bind:value={activeKw} on:change={(e) => selectKw(e.target.value)} style="margin:0">
+      <select bind:value={activeKw} on:change={handleKwChange} style="margin:0">
         {#each keywords as k}
           <option value={k}>{k}</option>
         {/each}
@@ -74,6 +79,7 @@
           <table style="margin:0;font-size:.85rem">
             <tbody>
               {#each files as f (f.name)}
+                <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
                 <tr
                   on:click={() => selectFile(f.name)}
                   style="cursor:pointer"
@@ -101,12 +107,14 @@
         <div class="toolbar" style="margin-bottom:.75rem">
           <strong>{activeFile}</strong>
           <div class="actions">
-            <a
-              class="icon-btn"
-              role="button"
-              href={api.fileDownloadUrl(activeKw, activeFile)}
-              download
-            >⤓ Download</a>
+            {#if activeKw && activeFile}
+              <a
+                class="icon-btn"
+                role="button"
+                href={api.fileDownloadUrl(activeKw, activeFile)}
+                download
+              >⤓ Download</a>
+            {/if}
           </div>
         </div>
 
@@ -122,10 +130,10 @@
 
 <style>
   tr.active {
-    background: rgba(59, 130, 246, 0.12);
+    background: rgba(34, 197, 94, 0.1);
   }
   tr:hover {
-    background: rgba(59, 130, 246, 0.06);
+    background: rgba(34, 197, 94, 0.05);
   }
   a.icon-btn {
     text-decoration: none;

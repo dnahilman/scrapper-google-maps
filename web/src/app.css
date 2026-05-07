@@ -1,6 +1,6 @@
-/* Modern UI overrides untuk Pico.css v2 — accent biru elektrik, rounded card,
-   soft shadow, smooth transitions. Dark mode default; light mode otomatis via
-   data-theme=light di <html>. */
+/* Terminal green + dark theme untuk Scrapper Web UI.
+   Dark mode default. Light mode via data-theme="light" di <html>.
+   Accent: terminal green #22c55e / #4ade80. */
 
 :root {
   --pico-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
@@ -11,40 +11,77 @@
   --pico-spacing: 1rem;
   --pico-form-element-spacing-vertical: 0.6rem;
   --pico-form-element-spacing-horizontal: 0.85rem;
+
+  /* Accent green tokens (shared) */
+  --accent: #22c55e;
+  --accent-light: #4ade80;
+  --accent-dim: rgba(34, 197, 94, 0.08);
+  --accent-dim-active: rgba(34, 197, 94, 0.12);
+  --accent-border: rgba(34, 197, 94, 0.3);
+  --accent-focus: rgba(34, 197, 94, 0.25);
 }
 
+/* ======== Dark mode (default) ======== */
 [data-theme='dark'],
 :root:not([data-theme='light']) {
-  --pico-background-color: #0b0f17;
-  --pico-color: #e6eef8;
-  --pico-card-background-color: #131a25;
-  --pico-card-border-color: rgba(255, 255, 255, 0.06);
-  --pico-card-sectioning-background-color: #0f1520;
-  --pico-muted-color: #94a3b8;
-  --pico-muted-border-color: rgba(255, 255, 255, 0.08);
-  --pico-primary: #3b82f6;
-  --pico-primary-hover: #60a5fa;
-  --pico-primary-focus: rgba(59, 130, 246, 0.25);
-  --pico-primary-inverse: #fff;
-  --pico-secondary: #6b7280;
-  --pico-secondary-hover: #9ca3af;
-  --pico-form-element-background-color: #0f1520;
-  --pico-form-element-border-color: rgba(255, 255, 255, 0.1);
-  --pico-form-element-active-border-color: #3b82f6;
-  --pico-form-element-focus-color: rgba(59, 130, 246, 0.25);
-  --pico-code-background-color: #0a0f1a;
-  --pico-code-color: #e5e7eb;
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --bg: #0d0d0d;
+  --surface: #141414;
+  --surface-inset: #0a0a0a;
+  --border: #2a2a2a;
+  --text: #e2e8f0;
+  --text-muted: #64748b;
+
+  --pico-background-color: var(--bg);
+  --pico-color: var(--text);
+  --pico-card-background-color: var(--surface);
+  --pico-card-border-color: var(--border);
+  --pico-card-sectioning-background-color: var(--surface-inset);
+  --pico-muted-color: var(--text-muted);
+  --pico-muted-border-color: var(--border);
+  --pico-primary: var(--accent);
+  --pico-primary-hover: var(--accent-light);
+  --pico-primary-focus: var(--accent-focus);
+  --pico-primary-inverse: #0d0d0d;
+  --pico-secondary: #4b5563;
+  --pico-secondary-hover: #6b7280;
+  --pico-form-element-background-color: #111111;
+  --pico-form-element-border-color: var(--border);
+  --pico-form-element-active-border-color: var(--accent);
+  --pico-form-element-focus-color: var(--accent-focus);
+  --pico-code-background-color: #080808;
+  --pico-code-color: #d1fae5;
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-sidebar: inset -1px 0 0 var(--border), 4px 0 12px rgba(0, 0, 0, 0.3);
 }
 
+/* ======== Light mode ======== */
 [data-theme='light'] {
-  --pico-background-color: #f5f7fb;
-  --pico-color: #1e293b;
-  --pico-card-background-color: #ffffff;
-  --pico-card-border-color: rgba(0, 0, 0, 0.06);
-  --pico-primary: #2563eb;
-  --pico-primary-hover: #1d4ed8;
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(15, 23, 42, 0.08);
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-inset: #f1f5f9;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+
+  --pico-background-color: var(--bg);
+  --pico-color: var(--text);
+  --pico-card-background-color: var(--surface);
+  --pico-card-border-color: var(--border);
+  --pico-card-sectioning-background-color: var(--surface-inset);
+  --pico-muted-color: var(--text-muted);
+  --pico-muted-border-color: var(--border);
+  --pico-primary: #16a34a;
+  --pico-primary-hover: #15803d;
+  --pico-primary-focus: rgba(22, 163, 74, 0.25);
+  --pico-primary-inverse: #fff;
+  --pico-secondary: #64748b;
+  --pico-secondary-hover: #475569;
+  --pico-form-element-background-color: var(--surface);
+  --pico-form-element-border-color: var(--border);
+  --pico-form-element-active-border-color: #16a34a;
+  --pico-form-element-focus-color: rgba(22, 163, 74, 0.25);
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-sidebar: inset -1px 0 0 var(--border);
 }
 
 * {
@@ -57,6 +94,8 @@ body {
   font-family: var(--pico-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--pico-background-color);
+  color: var(--pico-color);
 }
 
 button,
@@ -80,8 +119,10 @@ article {
     'sidebar header'
     'sidebar main';
   height: 100vh;
+  overflow: hidden;
 }
 
+/* ======== Header ======== */
 .app-header {
   grid-area: header;
   display: flex;
@@ -114,13 +155,19 @@ article {
   gap: 0.75rem;
 }
 
+/* ======== Sidebar — inset style ======== */
 .app-sidebar {
   grid-area: sidebar;
-  background: var(--pico-card-sectioning-background-color, var(--pico-card-background-color));
-  border-right: 1px solid var(--pico-muted-border-color);
+  /* Slightly darker than main content — inset feel */
+  background: var(--pico-card-sectioning-background-color);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-sidebar);
   padding: 1rem 0.5rem;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .app-sidebar .logo {
@@ -131,49 +178,57 @@ article {
   font-weight: 700;
   letter-spacing: -0.01em;
   font-size: 1.05rem;
+  /* Logo text in accent green */
+  color: var(--accent);
 }
 
 .app-sidebar .logo-mark {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   display: grid;
   place-items: center;
-  color: white;
+  color: #0d0d0d;
   font-weight: 800;
   font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
+/* Nav items */
 .nav-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.55rem 0.85rem;
-  margin: 0.15rem 0;
-  border-radius: 10px;
+  margin: 0.1rem 0;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.92rem;
-  color: var(--pico-muted-color);
+  color: var(--text-muted);
   border: 1px solid transparent;
+  border-left: 3px solid transparent;
   user-select: none;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .nav-item:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--accent-dim);
   color: var(--pico-color);
 }
 
 .nav-item.active {
-  background: rgba(59, 130, 246, 0.14);
+  background: var(--accent-dim-active);
   color: var(--pico-color);
-  border-color: rgba(59, 130, 246, 0.35);
-  box-shadow: inset 3px 0 0 var(--pico-primary);
+  border-left-color: var(--accent);
+  border-right-color: transparent;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
 }
 
 .nav-item .badge {
-  background: rgba(59, 130, 246, 0.25);
-  color: var(--pico-primary);
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--accent-light);
   border-radius: 999px;
   font-size: 0.72rem;
   padding: 0.05rem 0.5rem;
@@ -183,18 +238,20 @@ article {
 .app-sidebar .footer {
   margin-top: auto;
   padding: 0.75rem 0.85rem;
-  border-top: 1px solid var(--pico-muted-border-color);
+  border-top: 1px solid var(--border);
   font-size: 0.78rem;
-  color: var(--pico-muted-color);
+  color: var(--text-muted);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
+/* ======== Main content ======== */
 .app-main {
   grid-area: main;
   overflow-y: auto;
   padding: 1.5rem 1.75rem;
+  background: var(--pico-background-color);
 }
 
 .app-main > .container {
@@ -222,7 +279,7 @@ article {
 }
 
 .health-indicator.healthy .dot {
-  background: #22c55e;
+  background: var(--accent);
   box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
   animation: pulse 1.8s infinite;
 }
@@ -265,15 +322,15 @@ article {
   border-radius: 50%;
 }
 
-.pill.running { background: rgba(34, 197, 94, 0.12); color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
+.pill.running     { background: rgba(34, 197, 94, 0.12);  color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
 .pill.running .dot { background: #4ade80; animation: pulse 1.8s infinite; }
-.pill.exited  { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.25); }
+.pill.exited      { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.25); }
 .pill.exited .dot  { background: #94a3b8; }
-.pill.failed  { background: rgba(239, 68, 68, 0.12); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+.pill.failed      { background: rgba(239, 68, 68, 0.12);  color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
 .pill.failed .dot  { background: #f87171; }
-.pill.done    { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
-.pill.done .dot    { background: #60a5fa; }
-.pill.in_progress { background: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.3); }
+.pill.done        { background: rgba(34, 197, 94, 0.1);   color: #4ade80; border-color: rgba(34, 197, 94, 0.25); }
+.pill.done .dot    { background: #4ade80; }
+.pill.in_progress { background: rgba(234, 179, 8, 0.12);  color: #facc15; border-color: rgba(234, 179, 8, 0.3); }
 .pill.in_progress .dot { background: #facc15; animation: pulse 1.8s infinite; }
 
 /* ======== Cards / grids ======== */
@@ -300,6 +357,7 @@ article {
   font-size: 1.65rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: var(--accent-light);
 }
 
 .toolbar {
@@ -351,7 +409,7 @@ button.danger {
 
 button.ghost {
   --pico-primary: transparent;
-  --pico-primary-hover: rgba(59, 130, 246, 0.08);
+  --pico-primary-hover: var(--accent-dim);
   --pico-primary-inverse: var(--pico-color);
   border: 1px solid var(--pico-muted-border-color);
 }
@@ -361,15 +419,15 @@ button.ghost {
   font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
   font-size: 0.82rem;
   line-height: 1.55;
-  background: #06080d;
-  border: 1px solid var(--pico-muted-border-color);
+  background: #060606;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem;
   height: 60vh;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  color: #cbd5e1;
+  color: #a3e6bc;
 }
 
 .log-viewer .line {
@@ -378,8 +436,8 @@ button.ghost {
 
 .log-viewer .line.error { color: #fca5a5; }
 .log-viewer .line.warn  { color: #fcd34d; }
-.log-viewer .line.info  { color: #cbd5e1; }
-.log-viewer .line.debug { color: #94a3b8; }
+.log-viewer .line.info  { color: #a3e6bc; }
+.log-viewer .line.debug { color: #4b6557; }
 
 @keyframes fadein {
   from { opacity: 0; transform: translateY(2px); }
@@ -395,13 +453,14 @@ button.ghost {
   padding: 1rem;
   max-height: 65vh;
   overflow: auto;
-  border: 1px solid var(--pico-muted-border-color);
+  border: 1px solid var(--border);
+  color: var(--pico-code-color, #d1fae5);
 }
 
 /* ======== Theme toggle ======== */
 .theme-toggle {
   background: transparent;
-  border: 1px solid var(--pico-muted-border-color);
+  border: 1px solid var(--border);
   border-radius: 8px;
   width: 34px;
   height: 34px;
@@ -412,18 +471,24 @@ button.ghost {
   place-items: center;
 }
 .theme-toggle:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
 }
 
 /* ======== Responsive ======== */
 @media (max-width: 768px) {
   .app-shell {
     grid-template-columns: 1fr;
+    grid-template-rows: 56px 1fr;
     grid-template-areas:
       'header'
       'main';
+    overflow: auto;
   }
   .app-sidebar {
     display: none;
+  }
+  .app-main {
+    padding: 1rem;
   }
 }

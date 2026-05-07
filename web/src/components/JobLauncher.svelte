@@ -1,11 +1,11 @@
-<script>
+<script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { api } from '../lib/api.js';
-  import { notify } from '../lib/stores.js';
+  import { api, type JobResponse } from '../lib/api.ts';
+  import { notify } from '../lib/stores.ts';
 
   export let initialKeyword = 'cafe';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{ started: JobResponse }>();
 
   let open = false;
   let submitting = false;
@@ -19,7 +19,7 @@
 
   $: if (initialKeyword) keyword = initialKeyword;
 
-  async function submit() {
+  async function submit(): Promise<void> {
     submitting = true;
     try {
       const body = {
@@ -35,7 +35,7 @@
       open = false;
       dispatch('started', job);
     } catch (e) {
-      notify(`Gagal start job: ${e.message}`, 'error');
+      notify(`Gagal start job: ${(e as Error).message}`, 'error');
     } finally {
       submitting = false;
     }
@@ -96,7 +96,7 @@
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0, 0, 0, 0.6);
     border: none;
     margin: 0;
     width: 100%;

@@ -1,24 +1,26 @@
-<script>
+<script lang="ts">
   import { onDestroy, afterUpdate } from 'svelte';
-  import { api, streamLogs } from '../lib/api.js';
+  import { streamLogs } from '../lib/api.ts';
 
-  export let url = null;        // SSE URL (ditentukan oleh parent)
+  export let url: string | null = null;
   export let title = 'Log';
 
-  let lines = [];
-  let es = null;
-  let viewer;
+  let lines: string[] = [];
+  let es: EventSource | null = null;
+  let viewer: HTMLDivElement;
   let autoScroll = true;
   let filter = '';
 
-  function classify(l) {
+  type LogClass = 'error' | 'warn' | 'debug' | 'info';
+
+  function classify(l: string): LogClass {
     if (/error|exception|traceback|failed|captcha/i.test(l)) return 'error';
     if (/warn/i.test(l)) return 'warn';
     if (/debug/i.test(l)) return 'debug';
     return 'info';
   }
 
-  function connect() {
+  function connect(): void {
     if (es) {
       es.close();
       es = null;

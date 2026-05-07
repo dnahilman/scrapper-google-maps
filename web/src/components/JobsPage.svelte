@@ -1,12 +1,12 @@
-<script>
+<script lang="ts">
   import JobList from './JobList.svelte';
   import LogViewer from './LogViewer.svelte';
-  import { api } from '../lib/api.js';
+  import { api, type JobResponse } from '../lib/api.ts';
 
-  let viewing = null;
-  let url = null;
+  let viewing: JobResponse | null = null;
+  let url: string | null = null;
 
-  function onView(e) {
+  function onView(e: CustomEvent<JobResponse>): void {
     viewing = e.detail;
     url = api.jobLogStreamUrl(viewing.job_id, 300);
   }

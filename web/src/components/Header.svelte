@@ -1,15 +1,15 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { api, fmtUptime } from '../lib/api.js';
-  import { section, theme } from '../lib/stores.js';
+  import { api, fmtUptime, type HealthResponse } from '../lib/api.ts';
+  import { section, theme } from '../lib/stores.ts';
 
-  let healthState = 'checking'; // healthy | down | checking
-  let lastLatency = null;
-  let lastCheck = null;
-  let info = null;
-  let timer;
+  let healthState: 'healthy' | 'down' | 'checking' = 'checking';
+  let lastLatency: number | null = null;
+  let lastCheck: Date | null = null;
+  let info: HealthResponse | null = null;
+  let timer: ReturnType<typeof setInterval>;
 
-  async function check() {
+  async function check(): Promise<void> {
     const t0 = performance.now();
     try {
       info = await api.health();
@@ -29,7 +29,7 @@
 
   onDestroy(() => clearInterval(timer));
 
-  function toggleTheme() {
+  function toggleTheme(): void {
     theme.update((t) => (t === 'dark' ? 'light' : 'dark'));
   }
 

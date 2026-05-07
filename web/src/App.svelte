@@ -1,11 +1,11 @@
-<script>
+<script lang="ts">
   import Sidebar from './components/Sidebar.svelte';
   import Header from './components/Header.svelte';
   import ProgressDashboard from './components/ProgressDashboard.svelte';
   import JobsPage from './components/JobsPage.svelte';
   import FileBrowser from './components/FileBrowser.svelte';
   import LogsPage from './components/LogsPage.svelte';
-  import { section, toasts } from './lib/stores.js';
+  import { section, toasts } from './lib/stores.ts';
 </script>
 
 <div class="app-shell">
@@ -49,14 +49,15 @@
     background: var(--pico-card-background-color);
     color: var(--pico-color);
     border: 1px solid var(--pico-muted-border-color);
-    box-shadow: 0 8px 28px rgba(0,0,0,.3);
+    box-shadow: 0 8px 28px rgba(0,0,0,.4);
     font-size: .88rem;
     min-width: 220px;
     animation: slidein .2s ease;
   }
   .toast.success { border-left: 3px solid #22c55e; }
   .toast.error   { border-left: 3px solid #ef4444; }
-  .toast.info    { border-left: 3px solid #3b82f6; }
+  .toast.info    { border-left: 3px solid #22c55e; }
+  .toast.warn    { border-left: 3px solid #eab308; }
   @keyframes slidein {
     from { opacity: 0; transform: translateX(20px); }
     to   { opacity: 1; transform: translateX(0); }
