@@ -1,5 +1,4 @@
-/* Pure green terminal theme — ZERO blue.
-   Dark default. Light via data-theme="light" pada <html>.
+/* Pure green terminal theme — dark mode only, ZERO blue.
    Override 10 token Pico primary + 10 token secondary supaya tidak ada
    default biru Pico (#0172ad / #525f7a) yang bocor ke button bg, border,
    form focus, progress bar, switch, dll. */
@@ -45,10 +44,9 @@
 }
 
 /* ============================================================
-   DARK MODE (default)
+   THEME TOKENS (dark only)
    ============================================================ */
-[data-theme='dark'],
-:root:not([data-theme='light']) {
+:root {
   /* Surface scale */
   --bg:            #0a0a0a;
   --surface:       #111111;
@@ -137,85 +135,6 @@
 }
 
 /* ============================================================
-   LIGHT MODE
-   ============================================================ */
-[data-theme='light'] {
-  --bg:            #f8faf8;
-  --surface:       #ffffff;
-  --surface-2:     #eef6ee;
-  --surface-inset: #e8f2e8;
-  --border:        #d8ead8;
-  --border-strong: #b8d4b8;
-  --text:          #0d1f0d;
-  --text-strong:   #060f06;
-  --text-muted:    #4f7a4f;
-  --text-faint:    #7fa87f;
-
-  --accent:            var(--green-600);
-  --accent-light:      var(--green-500);
-  --accent-dim:        rgba(22, 163, 74, 0.08);
-  --accent-dim-active: rgba(22, 163, 74, 0.14);
-
-  --pico-background-color: var(--bg);
-  --pico-color: var(--text);
-  --pico-h1-color: var(--text-strong);
-  --pico-h2-color: var(--text-strong);
-  --pico-h3-color: var(--text-strong);
-  --pico-h4-color: var(--text-strong);
-  --pico-h5-color: var(--text-strong);
-  --pico-h6-color: var(--text-strong);
-  --pico-card-background-color: var(--surface);
-  --pico-card-border-color: var(--border);
-  --pico-card-sectioning-background-color: var(--surface-inset);
-  --pico-muted-color: var(--text-muted);
-  --pico-muted-border-color: var(--border);
-
-  /* PRIMARY light: darker green untuk AA contrast */
-  --pico-primary:                  var(--green-700);
-  --pico-primary-background:       var(--green-700);
-  --pico-primary-border:           var(--green-700);
-  --pico-primary-underline:        rgba(21, 128, 61, 0.5);
-  --pico-primary-hover:            var(--green-800);
-  --pico-primary-hover-background: var(--green-800);
-  --pico-primary-hover-border:     var(--green-800);
-  --pico-primary-hover-underline:  var(--green-800);
-  --pico-primary-focus:            rgba(22, 163, 74, 0.25);
-  --pico-primary-inverse:          #ffffff;
-
-  /* SECONDARY light: medium green tint */
-  --pico-secondary:                  var(--green-700);
-  --pico-secondary-background:       rgba(74, 222, 128, 0.18);
-  --pico-secondary-border:           rgba(74, 222, 128, 0.45);
-  --pico-secondary-underline:        rgba(22, 163, 74, 0.4);
-  --pico-secondary-hover:            var(--green-800);
-  --pico-secondary-hover-background: rgba(74, 222, 128, 0.28);
-  --pico-secondary-hover-border:     rgba(74, 222, 128, 0.55);
-  --pico-secondary-hover-underline:  var(--green-800);
-  --pico-secondary-focus:            rgba(74, 222, 128, 0.25);
-  --pico-secondary-inverse:          #ffffff;
-
-  --pico-form-element-background-color:        var(--surface);
-  --pico-form-element-border-color:            var(--border-strong);
-  --pico-form-element-color:                   var(--text);
-  --pico-form-element-active-background-color: var(--surface);
-  --pico-form-element-active-border-color:     var(--green-600);
-  --pico-form-element-focus-color:             rgba(22, 163, 74, 0.25);
-  --pico-form-element-placeholder-color:       var(--text-faint);
-
-  --pico-progress-background-color: var(--surface-2);
-  --pico-switch-background-color:   var(--border-strong);
-  --pico-switch-color:               #ffffff;
-  --pico-range-active-border-color: var(--green-600);
-
-  --pico-code-background-color: #f0fdf4;
-  --pico-code-color:            #14532d;
-
-  --shadow-soft:     0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.08);
-  --shadow-sidebar:  inset -1px 0 0 var(--border), 2px 0 6px rgba(15, 23, 42, 0.05);
-  --shadow-elevated: 0 8px 24px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.06);
-}
-
-/* ============================================================
    Base
    ============================================================ */
 * { box-sizing: border-box; }
@@ -238,11 +157,6 @@ article {
   background: var(--surface);
   box-shadow: var(--shadow-soft);
   border: 1px solid var(--border);
-}
-
-[data-theme='light'] article {
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 /* ============================================================
@@ -311,40 +225,6 @@ article {
   height: 100%;
 }
 
-/* Theme toggle — fully isolated dari Pico button defaults */
-.theme-toggle {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent !important;
-  border: 1px solid var(--border-strong) !important;
-  border-radius: 8px;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  cursor: pointer;
-  color: var(--text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.95rem;
-  line-height: 1;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  --pico-primary-background: transparent;
-  --pico-primary-hover-background: transparent;
-  --pico-primary-border: transparent;
-  --pico-primary: var(--text);
-}
-.theme-toggle:hover {
-  background: var(--accent-tint-2) !important;
-  border-color: var(--accent-border) !important;
-  color: var(--green-400);
-}
-[data-theme='light'] .theme-toggle:hover { color: var(--green-700); }
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent-focus-ring);
-  outline-offset: 2px;
-}
-
 /* Health indicator pill */
 .health-indicator {
   display: inline-flex;
@@ -388,9 +268,6 @@ article {
   background: var(--status-warning);
   animation: pulse 1.4s infinite;
 }
-[data-theme='light'] .health-indicator.healthy { color: var(--green-700); }
-[data-theme='light'] .health-indicator.down    { color: #b91c1c; }
-[data-theme='light'] .health-indicator.checking{ color: #a16207; }
 
 @keyframes pulse {
   0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
@@ -424,7 +301,6 @@ article {
   font-size: 1.05rem;
   color: var(--green-400);
 }
-[data-theme='light'] .app-sidebar .logo { color: var(--green-700); }
 
 .app-sidebar .logo-mark {
   width: 28px;
@@ -470,7 +346,6 @@ article {
   border-left-color: var(--green-500);
   font-weight: 600;
 }
-[data-theme='light'] .nav-item.active { border-left-color: var(--green-600); }
 
 .nav-item:focus-visible {
   outline: 2px solid var(--accent-focus-ring);
@@ -489,7 +364,6 @@ article {
   opacity: 1;
   color: var(--green-400);
 }
-[data-theme='light'] .nav-item.active .nav-icon { color: var(--green-700); }
 
 .nav-item .badge {
   background: var(--accent-tint-4);
@@ -499,7 +373,6 @@ article {
   padding: 0.1rem 0.55rem;
   font-weight: 600;
 }
-[data-theme='light'] .nav-item .badge { color: var(--green-800); }
 
 .app-sidebar .footer {
   margin-top: auto;
@@ -557,14 +430,6 @@ article {
 .pill.in_progress   { background: rgba(234, 179, 8, 0.12);  color: var(--status-warning-light); border-color: rgba(234, 179, 8, 0.3); }
 .pill.in_progress .dot { background: var(--status-warning-light); animation: pulse 1.8s infinite; }
 
-[data-theme='light'] .pill.running     { background: rgba(22, 163, 74, 0.12); color: var(--green-700); border-color: rgba(22, 163, 74, 0.3); }
-[data-theme='light'] .pill.running .dot{ background: var(--green-600); }
-[data-theme='light'] .pill.done        { background: rgba(22, 163, 74, 0.10); color: var(--green-700); border-color: rgba(22, 163, 74, 0.25); }
-[data-theme='light'] .pill.done .dot   { background: var(--green-600); }
-[data-theme='light'] .pill.exited      { background: rgba(100, 116, 139, 0.12); color: #475569; border-color: rgba(100, 116, 139, 0.3); }
-[data-theme='light'] .pill.failed      { background: rgba(239, 68, 68, 0.10); color: #b91c1c; border-color: rgba(239, 68, 68, 0.3); }
-[data-theme='light'] .pill.in_progress { background: rgba(234, 179, 8, 0.14); color: #a16207; border-color: rgba(234, 179, 8, 0.35); }
-
 /* ============================================================
    Cards / KPI
    ============================================================ */
@@ -593,7 +458,6 @@ article {
   letter-spacing: -0.02em;
   color: var(--green-400);
 }
-[data-theme='light'] .kpi .value { color: var(--green-700); }
 
 .toolbar {
   display: flex;
@@ -624,7 +488,6 @@ th {
   letter-spacing: 0.04em;
   color: var(--text-muted);
 }
-[data-theme='light'] table th { border-bottom: 1px solid var(--border-strong); }
 
 /* ============================================================
    Buttons — ghost, danger, icon-btn
@@ -661,8 +524,6 @@ a.ghost:hover {
   border-color: var(--accent-border) !important;
   color: var(--green-400) !important;
 }
-[data-theme='light'] button.ghost:hover,
-[data-theme='light'] a.ghost:hover { color: var(--green-700) !important; }
 
 button.danger {
   background: var(--status-danger-dark) !important;
@@ -703,16 +564,6 @@ button.danger:hover {
 .log-viewer .line.info  { color: #a3e6bc; }
 .log-viewer .line.debug { color: #4b6557; }
 
-[data-theme='light'] .log-viewer {
-  background: #f0faf0;
-  color: var(--green-800);
-  border-color: var(--border);
-}
-[data-theme='light'] .log-viewer .line.error { color: #b91c1c; }
-[data-theme='light'] .log-viewer .line.warn  { color: #a16207; }
-[data-theme='light'] .log-viewer .line.info  { color: var(--green-700); }
-[data-theme='light'] .log-viewer .line.debug { color: #64748b; }
-
 @keyframes fadein {
   from { opacity: 0; transform: translateY(2px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -732,7 +583,6 @@ button.danger:hover {
   border: 1px solid var(--border);
   color: var(--green-200);
 }
-[data-theme='light'] .json-viewer { color: var(--green-800); }
 
 /* ============================================================
    Responsive

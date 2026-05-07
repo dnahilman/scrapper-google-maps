@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { api, fmtUptime, type HealthResponse } from '../lib/api.ts';
-  import { section, theme } from '../lib/stores.ts';
+  import { section } from '../lib/stores.ts';
 
   let healthState: 'healthy' | 'down' | 'checking' = 'checking';
   let lastLatency: number | null = null;
@@ -28,10 +28,6 @@
   });
 
   onDestroy(() => clearInterval(timer));
-
-  function toggleTheme(): void {
-    theme.update((t) => (t === 'dark' ? 'light' : 'dark'));
-  }
 
   $: tooltip =
     info != null
@@ -61,14 +57,5 @@
       <span class="dot"></span>
       <span>{label}</span>
     </span>
-    <button
-      class="theme-toggle"
-      type="button"
-      on:click={toggleTheme}
-      aria-label="Toggle theme (currently {$theme})"
-      title="Toggle theme"
-    >
-      <span aria-hidden="true">{$theme === 'dark' ? '☾' : '☼'}</span>
-    </button>
   </div>
 </header>

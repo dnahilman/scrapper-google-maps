@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable } from 'svelte/store';
 
 export type Section = 'dashboard' | 'jobs' | 'files' | 'logs';
 export type ToastKind = 'info' | 'success' | 'error' | 'warn';
@@ -46,19 +46,3 @@ export function notify(message: string, kind: ToastKind = 'info', timeout = 3500
 
 // Active jobs counter — di-update oleh JobList polling
 export const activeJobsCount = writable<number>(0);
-
-// Theme
-type Theme = 'dark' | 'light';
-
-function readTheme(): Theme {
-  return (localStorage.getItem('theme') as Theme) || 'dark';
-}
-
-export const theme = writable<Theme>(readTheme());
-
-theme.subscribe((t) => {
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('theme', t);
-});
-
-export const isDark = derived(theme, ($t) => $t === 'dark');
