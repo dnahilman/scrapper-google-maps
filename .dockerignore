@@ -41,3 +41,13 @@ README.md
 
 # Plan files
 plans
+
+# Frontend build artifacts (di-build di multi-stage, tidak ikut context)
+frontend/node_modules
+frontend/dist
+frontend/.svelte-kit
+frontend/.vite
+
+# Tests (kalau ada)
+tests
+test

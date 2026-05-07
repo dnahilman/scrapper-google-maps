@@ -21,3 +21,13 @@ logs/
 .vscode/
 
 backups/
+
+# Frontend (Svelte) build artifacts — di-build oleh Docker multi-stage
+frontend/node_modules/
+frontend/dist/
+frontend/.svelte-kit/
+frontend/.vite/
+package-lock.json.bak
+
+# Static UI yang ter-mount dari build stage di image — jangan commit
+web/static/
