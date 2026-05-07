@@ -1,10 +1,5 @@
-/* Pure green terminal theme — dark mode only, ZERO blue.
-   Override 10 token Pico primary + 10 token secondary supaya tidak ada
-   default biru Pico (#0172ad / #525f7a) yang bocor ke button bg, border,
-   form focus, progress bar, switch, dll. */
-
 :root {
-  /* ===== Typography & spacing ===== */
+  /* ===== Typography & spacing tweaks ===== */
   --pico-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
   --pico-font-size: 15px;
@@ -14,121 +9,38 @@
   --pico-form-element-spacing-vertical: 0.6rem;
   --pico-form-element-spacing-horizontal: 0.85rem;
 
-  /* ===== Brand green palette (shared) ===== */
-  --green-50:  #f0fdf4;
-  --green-100: #dcfce7;
-  --green-200: #bbf7d0;
-  --green-300: #86efac;  /* secondary dark */
-  --green-400: #4ade80;  /* accent-light, secondary light */
-  --green-500: #22c55e;  /* primary dark */
-  --green-600: #16a34a;  /* primary light, hover dark */
-  --green-700: #15803d;  /* hover light */
-  --green-800: #166534;
-  --green-900: #14532d;
-
-  /* ===== Status semantic ===== */
-  --status-success: #22c55e;
-  --status-warning: #eab308;
+  /* ===== Status semantic (not in Pico) ===== */
+  --status-warning:       #eab308;
   --status-warning-light: #facc15;
-  --status-danger: #ef4444;
-  --status-danger-dark: #dc2626;
-  --status-neutral: #94a3b8;
+  --status-danger:        #ef4444;
+  --status-danger-dark:   #dc2626;
+  --status-neutral:       #94a3b8;
 
-  /* ===== Tinted accent layers (dipakai untuk hover/active background) ===== */
-  --accent-tint-1: rgba(34, 197, 94, 0.06);
-  --accent-tint-2: rgba(34, 197, 94, 0.10);
-  --accent-tint-3: rgba(34, 197, 94, 0.16);
-  --accent-tint-4: rgba(34, 197, 94, 0.24);
-  --accent-border: rgba(34, 197, 94, 0.32);
-  --accent-focus-ring: rgba(34, 197, 94, 0.30);
-}
+  /* ===== Accent (jade) — tints derived from Pico jade dark primary #00b478 ===== */
+  --accent-rgb:        0, 180, 120;
+  --accent-tint-1:     rgba(var(--accent-rgb), 0.06);
+  --accent-tint-2:     rgba(var(--accent-rgb), 0.10);
+  --accent-tint-3:     rgba(var(--accent-rgb), 0.16);
+  --accent-tint-4:     rgba(var(--accent-rgb), 0.24);
+  --accent-border:     rgba(var(--accent-rgb), 0.32);
+  --accent-focus-ring: rgba(var(--accent-rgb), 0.30);
 
-/* ============================================================
-   THEME TOKENS (dark only)
-   ============================================================ */
-:root {
-  /* Surface scale */
-  --bg:            #0a0a0a;
-  --surface:       #111111;
-  --surface-2:     #161616;
-  --surface-inset: #080808;
-  --border:        #1f1f1f;
-  --border-strong: #2a2a2a;
-  --text:          #e5e7eb;
-  --text-strong:   #ffffff;
-  --text-muted:    #6b7280;
-  --text-faint:    #4b5563;
+  /* ===== Shorthand aliases → Pico tokens ===== */
+  --bg:            var(--pico-background-color);
+  --surface:       var(--pico-card-background-color);
+  --surface-2:     var(--pico-progress-background-color);
+  --surface-inset: var(--pico-card-sectioning-background-color);
+  --border:        var(--pico-muted-border-color);
+  --border-strong: var(--pico-form-element-border-color);
+  --text:          var(--pico-color);
+  --text-strong:   var(--pico-h1-color);
+  --text-muted:    var(--pico-muted-color);
+  --text-faint:    var(--pico-form-element-placeholder-color);
+  --accent:        var(--pico-primary);
+  --accent-light:  var(--pico-primary-hover);
+  --accent-inverse:var(--pico-primary-inverse);
 
-  /* Aliases */
-  --accent:            var(--green-500);
-  --accent-light:      var(--green-400);
-  --accent-dim:        var(--accent-tint-2);
-  --accent-dim-active: var(--accent-tint-3);
-
-  /* Pico bridge — basic */
-  --pico-background-color: var(--bg);
-  --pico-color: var(--text);
-  --pico-h1-color: var(--text-strong);
-  --pico-h2-color: var(--text-strong);
-  --pico-h3-color: var(--text-strong);
-  --pico-h4-color: var(--text-strong);
-  --pico-h5-color: var(--text-strong);
-  --pico-h6-color: var(--text-strong);
-  --pico-card-background-color: var(--surface);
-  --pico-card-border-color: var(--border);
-  --pico-card-sectioning-background-color: var(--surface-inset);
-  --pico-muted-color: var(--text-muted);
-  --pico-muted-border-color: var(--border);
-
-  /* === PRIMARY (10 tokens, ALL green) === */
-  --pico-primary:                  var(--green-500);
-  --pico-primary-background:       var(--green-500);
-  --pico-primary-border:           var(--green-500);
-  --pico-primary-underline:        rgba(34, 197, 94, 0.5);
-  --pico-primary-hover:            var(--green-400);
-  --pico-primary-hover-background: var(--green-600);
-  --pico-primary-hover-border:     var(--green-600);
-  --pico-primary-hover-underline:  var(--green-400);
-  --pico-primary-focus:            var(--accent-focus-ring);
-  --pico-primary-inverse:          #06140b;
-
-  /* === SECONDARY (light green tint, NOT slate-blue) === */
-  --pico-secondary:                  var(--green-300);
-  --pico-secondary-background:       rgba(134, 239, 172, 0.12);
-  --pico-secondary-border:           rgba(134, 239, 172, 0.30);
-  --pico-secondary-underline:        rgba(134, 239, 172, 0.45);
-  --pico-secondary-hover:            var(--green-200);
-  --pico-secondary-hover-background: rgba(134, 239, 172, 0.20);
-  --pico-secondary-hover-border:     rgba(134, 239, 172, 0.50);
-  --pico-secondary-hover-underline:  var(--green-200);
-  --pico-secondary-focus:            rgba(134, 239, 172, 0.25);
-  --pico-secondary-inverse:          #06140b;
-
-  /* Form elements */
-  --pico-form-element-background-color:        #0e0e0e;
-  --pico-form-element-border-color:            var(--border-strong);
-  --pico-form-element-color:                   var(--text);
-  --pico-form-element-active-background-color: #0e0e0e;
-  --pico-form-element-active-border-color:     var(--green-500);
-  --pico-form-element-focus-color:             var(--accent-focus-ring);
-  --pico-form-element-placeholder-color:       var(--text-faint);
-  --pico-form-element-disabled-background-color: #0a0a0a;
-  --pico-form-element-disabled-border-color:     var(--border);
-  --pico-form-element-disabled-opacity:          0.5;
-
-  /* Progress / switch / range — auto-green via primary-background */
-  --pico-progress-background-color: var(--surface-2);
-  --pico-switch-background-color:   var(--surface-2);
-  --pico-switch-color:               #ffffff;
-  --pico-range-active-border-color: var(--green-500);
-
-  /* Code */
-  --pico-code-background-color: #060606;
-  --pico-code-color:            var(--green-200);
-  --pico-code-kbd-background-color: var(--green-500);
-  --pico-code-kbd-color:        #06140b;
-
-  /* Shadows */
+  /* ===== Shadows ===== */
   --shadow-soft:     0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-sidebar:  inset -1px 0 0 var(--border), 4px 0 12px rgba(0, 0, 0, 0.4);
   --shadow-elevated: 0 8px 28px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -145,8 +57,6 @@ body {
   font-family: var(--pico-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--bg);
-  color: var(--text);
 }
 
 button, input, select, textarea {
@@ -159,10 +69,7 @@ article {
   border: 1px solid var(--border);
 }
 
-/* ============================================================
-   DEFENSIVE ANTI-BLUE — sidebar nav <div role="button">
-   tidak boleh inherit Pico [role=button] biru
-   ============================================================ */
+/* Sidebar nav uses <div role="button"> — kill Pico [role=button] inherit */
 .app-sidebar [role='button'] {
   background: transparent;
   border: none;
@@ -247,12 +154,12 @@ article {
   display: inline-block;
 }
 .health-indicator.healthy {
-  color: var(--green-400);
+  color: var(--accent);
   border-color: var(--accent-border);
 }
 .health-indicator.healthy .dot {
-  background: var(--green-500);
-  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.6);
   animation: pulse 1.8s infinite;
 }
 .health-indicator.down {
@@ -270,9 +177,9 @@ article {
 }
 
 @keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
-  70%  { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
 }
 
 /* ============================================================
@@ -299,17 +206,17 @@ article {
   font-weight: 700;
   letter-spacing: -0.01em;
   font-size: 1.05rem;
-  color: var(--green-400);
+  color: var(--accent);
 }
 
 .app-sidebar .logo-mark {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--green-400), var(--green-600));
+  background: linear-gradient(135deg, var(--accent-light), var(--accent));
   display: grid;
   place-items: center;
-  color: #06140b;
+  color: var(--accent-inverse);
   font-weight: 800;
   font-size: 0.85rem;
   flex-shrink: 0;
@@ -331,7 +238,7 @@ article {
   border-left: 3px solid transparent;
   user-select: none;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-  /* Anti-blue defense */
+  /* Defensive — kill Pico [role=button] inherit */
   --pico-primary-background: transparent;
   --pico-primary-hover-background: transparent;
   --pico-primary-border: transparent;
@@ -343,7 +250,7 @@ article {
 .nav-item.active {
   background: var(--accent-tint-3);
   color: var(--text-strong);
-  border-left-color: var(--green-500);
+  border-left-color: var(--accent);
   font-weight: 600;
 }
 
@@ -362,12 +269,12 @@ article {
 }
 .nav-item.active .nav-icon {
   opacity: 1;
-  color: var(--green-400);
+  color: var(--accent);
 }
 
 .nav-item .badge {
   background: var(--accent-tint-4);
-  color: var(--green-300);
+  color: var(--accent-light);
   border-radius: 999px;
   font-size: 0.72rem;
   padding: 0.1rem 0.55rem;
@@ -419,14 +326,14 @@ article {
   border-radius: 50%;
 }
 
-.pill.running       { background: rgba(34, 197, 94, 0.12);  color: var(--green-400); border-color: rgba(34, 197, 94, 0.3); }
-.pill.running .dot  { background: var(--green-400); animation: pulse 1.8s infinite; }
+.pill.running       { background: var(--accent-tint-2);  color: var(--accent); border-color: var(--accent-border); }
+.pill.running .dot  { background: var(--accent); animation: pulse 1.8s infinite; }
 .pill.exited        { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.25); }
 .pill.exited .dot   { background: #94a3b8; }
 .pill.failed        { background: rgba(239, 68, 68, 0.12);  color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
 .pill.failed .dot   { background: #f87171; }
-.pill.done          { background: rgba(34, 197, 94, 0.10);  color: var(--green-400); border-color: rgba(34, 197, 94, 0.25); }
-.pill.done .dot     { background: var(--green-400); }
+.pill.done          { background: var(--accent-tint-2); color: var(--accent); border-color: var(--accent-border); }
+.pill.done .dot     { background: var(--accent); }
 .pill.in_progress   { background: rgba(234, 179, 8, 0.12);  color: var(--status-warning-light); border-color: rgba(234, 179, 8, 0.3); }
 .pill.in_progress .dot { background: var(--status-warning-light); animation: pulse 1.8s infinite; }
 
@@ -456,7 +363,7 @@ article {
   font-size: 1.65rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--green-400);
+  color: var(--accent);
 }
 
 .toolbar {
@@ -491,8 +398,8 @@ th {
 
 /* ============================================================
    Buttons — ghost, danger, icon-btn
-   Pico's primary-* tokens already green via dark/light blocks above,
-   so default <button> filled = green. Ghost & danger override.
+   Pico's primary-* tokens already jade; default <button> filled = jade.
+   Ghost & danger override.
    ============================================================ */
 button.icon-btn,
 a.icon-btn {
@@ -522,7 +429,7 @@ button.ghost:hover,
 a.ghost:hover {
   background: var(--accent-tint-2) !important;
   border-color: var(--accent-border) !important;
-  color: var(--green-400) !important;
+  color: var(--accent) !important;
 }
 
 button.danger {
@@ -555,14 +462,14 @@ button.danger:hover {
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  color: #a3e6bc;
+  color: var(--accent-light);
 }
 
 .log-viewer .line { animation: fadein 0.18s ease; }
 .log-viewer .line.error { color: #fca5a5; }
 .log-viewer .line.warn  { color: #fcd34d; }
-.log-viewer .line.info  { color: #a3e6bc; }
-.log-viewer .line.debug { color: #4b6557; }
+.log-viewer .line.info  { color: var(--accent-light); }
+.log-viewer .line.debug { color: var(--text-muted); }
 
 @keyframes fadein {
   from { opacity: 0; transform: translateY(2px); }
@@ -581,7 +488,7 @@ button.danger:hover {
   max-height: 65vh;
   overflow: auto;
   border: 1px solid var(--border);
-  color: var(--green-200);
+  color: var(--accent-light);
 }
 
 /* ============================================================
