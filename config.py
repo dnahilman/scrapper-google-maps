@@ -9,14 +9,45 @@ ROOT = Path(__file__).parent
 
 # Load env dari .env.local (single source of truth)
 load_dotenv(ROOT / ".env.local")
+
 DATA_DIR = ROOT / "data"
-OUTPUT_DIR = DATA_DIR / "output"
 LOG_DIR = ROOT / "logs"
 KELURAHAN_FILE = DATA_DIR / "kelurahan_bandung.json"
-PROGRESS_DB = ROOT / "progress.db"
 
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# ============================================================================
+# Keyword target scraping — di-set via --keyword CLI flag (lihat scripts/*.py).
+# Storage mengalir dari sini: data/<keyword>/{*.json, progress.db}.
+# ============================================================================
+_KEYWORD: str | None = None
+
+
+def set_keyword(keyword: str) -> None:
+    global _KEYWORD
+    kw = (keyword or "").strip().lower()
+    if not kw:
+        raise ValueError("Keyword tidak boleh kosong")
+    _KEYWORD = kw
+
+
+def get_keyword() -> str:
+    if _KEYWORD is None:
+        raise RuntimeError(
+            "Keyword belum di-set. Pass --keyword di CLI sebelum panggil storage/scraper API."
+        )
+    return _KEYWORD
+
+
+def output_dir() -> Path:
+    """Folder output JSON + progress.db untuk keyword aktif. Auto-create."""
+    d = DATA_DIR / get_keyword()
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def progress_db() -> Path:
+    return output_dir() / "progress.db"
 
 # ============================================================================
 # Browser & delay
@@ -43,6 +74,9 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 # ============================================================================
 # Sync API (POST hasil scraping ke remote backend)
 # ============================================================================
+# CAFES_SYNC_URL: endpoint JSON utama (header x-api-key, body { cafes: [...] }).
+# APP_URL/SYNC_ENDPOINT legacy (multipart) — disisakan untuk backward compat.
+CAFES_SYNC_URL = os.getenv("CAFES_SYNC_URL", "")
 APP_URL = os.getenv("APP_URL", "https://api.hilman.imola.ai")
 GOOGLE_MAPS_SYNC_API_KEY = os.getenv("GOOGLE_MAPS_SYNC_API_KEY", "")
 SYNC_ENDPOINT = "/v1/web/sync-google-maps"
@@ -50,7 +84,7 @@ SYNC_ENDPOINT = "/v1/web/sync-google-maps"
 # ============================================================================
 # Search query template & target
 # ============================================================================
-SEARCH_QUERY_TEMPLATE = "barbershop di {kelurahan}, {kecamatan}, Bandung"
+SEARCH_QUERY_TEMPLATE = "{keyword} di {kelurahan}, {kecamatan}, Bandung"
 GMAPS_BASE_URL = "https://www.google.com/maps"
 
 # ============================================================================

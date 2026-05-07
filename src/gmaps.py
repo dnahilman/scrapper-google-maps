@@ -14,6 +14,7 @@ from config import (
     MAX_REVIEW_AGE_DAYS,
     SKIP_EMPTY_REVIEWS,
     SORT_REVIEWS_BY_NEWEST,
+    get_keyword,
 )
 from src.logger import get_logger
 
@@ -165,13 +166,18 @@ async def _click_tab(page: Page, *aria_patterns: str) -> bool:
 
 
 # ============================================================================
-# Search: cari semua barbershop di kelurahan
+# Search: cari semua place sesuai keyword di kelurahan
 # ============================================================================
 
-async def search_barbershops(
-    page: Page, kelurahan: str, kecamatan: str, limit: int | None = None
+async def search_places(
+    page: Page,
+    kelurahan: str,
+    kecamatan: str,
+    limit: int | None = None,
+    keyword: str | None = None,
 ) -> list[str]:
-    query = SEARCH_QUERY_TEMPLATE.format(kelurahan=kelurahan, kecamatan=kecamatan)
+    kw = keyword or get_keyword()
+    query = SEARCH_QUERY_TEMPLATE.format(keyword=kw, kelurahan=kelurahan, kecamatan=kecamatan)
     url = f"{GMAPS_BASE_URL}/search/{quote(query)}?hl=id"
     log.info(f"Search: {query}")
     await page.goto(url, wait_until="domcontentloaded", timeout=60000)
@@ -211,7 +217,7 @@ async def search_barbershops(
             urls.append(href)
         if limit and len(urls) >= limit:
             break
-    log.info(f"Ditemukan {len(urls)} barbershop di {kelurahan}" + (f" (limit {limit})" if limit else ""))
+    log.info(f"Ditemukan {len(urls)} place di {kelurahan}" + (f" (limit {limit})" if limit else ""))
     return urls[:limit] if limit else urls
 
 
@@ -260,8 +266,9 @@ async def scrape_place(page: Page, url: str) -> dict | None:
     data["photos"] = await _scrape_photos(page)
     data["hours"] = await _scrape_hours(page)
     data["about"] = _clean_about(await _scrape_about(page))
-    data["services_about"] = _flatten_services(data["about"])
+    data["menu"] = await _scrape_menu(page)
     data["reviews"] = await _scrape_reviews(page)
+    data["review_distribution"] = await _scrape_review_distribution(page)
     return data
 
 
@@ -475,21 +482,6 @@ async def _scrape_about(page: Page) -> dict:
     return sections or {}
 
 
-def _flatten_services(about: dict) -> list[str]:
-    """Ekstrak items dari section bernama 'Layanan'/'Services' di About panel."""
-    if not about:
-        return []
-    services: list[str] = []
-    for k, items in about.items():
-        kl = k.lower()
-        if kl == "layanan" or kl == "services" or "service options" in kl or "opsi layanan" in kl:
-            for item in items:
-                clean = _clean(item)
-                if clean and clean not in services:
-                    services.append(clean)
-    return services
-
-
 def _clean_about(about: dict) -> dict:
     out: dict[str, list[str]] = {}
     for section, items in about.items():
@@ -502,6 +494,178 @@ def _clean_about(about: dict) -> dict:
         if cleaned_items:
             out[sec] = cleaned_items
     return out
+
+
+# ============================================================================
+# Menu (cafe/resto): text items + photos dari tab "Menu"
+# ============================================================================
+
+async def _scrape_menu(page: Page) -> dict:
+    """Scrape tab Menu kalau ada. Return {items: [{name, price}], photos: [url]}.
+
+    Best-effort: kalau tab "Menu" tidak ada (mis. barbershop), return empty langsung.
+    Strategy text extraction:
+      1. Cari h3/heading sebagai dish name, ambil price dari parent block.
+      2. Fallback: scan li/div berisi pattern 'Rp NNN' kalau strategi 1 kosong.
+    """
+    if not await _click_tab(page, "Menu"):
+        return {"items": [], "photos": []}
+
+    try:
+        await page.wait_for_selector('div[role="main"]', timeout=5000)
+    except PWTimeout:
+        return {"items": [], "photos": []}
+    await _human_delay(short=True)
+
+    try:
+        items = await page.evaluate(
+            r"""
+            () => {
+                const norm = s => (s || '').replace(/\s+/g, ' ').trim();
+                const main = document.querySelector('div[role="main"]') || document.body;
+                const out = [];
+                const seen = new Set();
+                const priceRe = /Rp\s*[\d.,]+(?:\s*[-–]\s*Rp?\s*[\d.,]+)?/i;
+
+                const addItem = (name, price) => {
+                    const cleanName = norm(name);
+                    if (!cleanName || cleanName.length > 150) return;
+                    const cleanPrice = price ? norm(price) : null;
+                    const key = cleanName + '|' + (cleanPrice || '');
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    out.push({ name: cleanName, price: cleanPrice });
+                };
+
+                // Strategy 1: h3/heading-based — typical menu items punya h3 nama dish
+                main.querySelectorAll('h3, [role="heading"]').forEach(h => {
+                    const name = norm(h.innerText);
+                    if (!name) return;
+                    const block = h.closest('[role="button"], [role="link"], li, div[jsaction]') || h.parentElement;
+                    if (!block) return;
+                    const blockText = norm(block.innerText);
+                    const m = blockText.match(priceRe);
+                    addItem(name, m ? m[0] : null);
+                });
+
+                // Strategy 2: fallback kalau h3 kosong — scan leaf elements dengan price
+                if (out.length === 0) {
+                    main.querySelectorAll('li, div[jsaction]').forEach(el => {
+                        const text = norm(el.innerText);
+                        if (!text || text.length > 300) return;
+                        const m = text.match(priceRe);
+                        if (!m) return;
+                        const beforePrice = norm(text.split(m[0])[0]);
+                        if (!beforePrice) return;
+                        const lines = beforePrice.split('\n').map(s => s.trim()).filter(Boolean);
+                        addItem(lines[0], m[0]);
+                    });
+                }
+
+                return out.slice(0, 200);
+            }
+            """
+        )
+    except Exception as e:
+        log.debug(f"Menu items scrape error: {e}")
+        items = []
+
+    try:
+        photos = await page.evaluate(
+            r"""
+            () => {
+                const isAvatar = url => /googleusercontent\.com\/a[-]?\//.test(url);
+                const main = document.querySelector('div[role="main"]') || document.body;
+                const out = new Set();
+                main.querySelectorAll('img').forEach(img => {
+                    const src = img.src || img.dataset?.src || '';
+                    if (!src.includes('googleusercontent.com')) return;
+                    if (isAvatar(src)) return;
+                    if (/=s[1-9]\d?-/.test(src)) return;
+                    if (/=w[1-9]\d?-h/.test(src)) return;
+                    let base = src;
+                    const eqIdx = src.indexOf('=');
+                    if (eqIdx > -1) base = src.substring(0, eqIdx);
+                    out.add(base + '=w800-h600-k-no');
+                });
+                main.querySelectorAll('button[style*="background-image"], div[style*="background-image"]').forEach(el => {
+                    const style = el.getAttribute('style') || '';
+                    const m = style.match(/url\("?(https:\/\/[^")]+googleusercontent[^")]+)"?\)/);
+                    if (m) {
+                        let url = m[1];
+                        if (isAvatar(url)) return;
+                        const eqIdx = url.indexOf('=');
+                        if (eqIdx > -1) url = url.substring(0, eqIdx);
+                        out.add(url + '=w800-h600-k-no');
+                    }
+                });
+                return Array.from(out).slice(0, 30);
+            }
+            """
+        )
+    except Exception as e:
+        log.debug(f"Menu photos scrape error: {e}")
+        photos = []
+
+    log.info(f"  Menu: {len(items or [])} items, {len(photos or [])} photos")
+    return {"items": items or [], "photos": photos or []}
+
+
+# ============================================================================
+# Review distribution histogram (count per star rating)
+# ============================================================================
+
+async def _scrape_review_distribution(page: Page) -> dict | None:
+    """Scrape histogram count per star dari aria-label Google Maps.
+
+    Format aria-label yang umum (ID): "5 bintang, 135 ulasan" atau "135 ulasan dengan 5 bintang".
+    Format EN: "5 stars, 135 reviews" atau "135 reviews with 5 stars".
+
+    Return dict {oneStar, twoStar, threeStar, fourStar, fiveStar} atau None kalau tidak found.
+    Asumsi: review tab sudah pernah di-buka (histogram lazy-load di review tab).
+    """
+    try:
+        result = await page.evaluate(
+            r"""
+            () => {
+                const out = {oneStar: 0, twoStar: 0, threeStar: 0, fourStar: 0, fiveStar: 0};
+                const keys = ['oneStar', 'twoStar', 'threeStar', 'fourStar', 'fiveStar'];
+                let found = false;
+
+                document.querySelectorAll('[aria-label]').forEach(el => {
+                    const label = el.getAttribute('aria-label') || '';
+                    let star = null, count = null;
+                    let m;
+                    // Indonesian: "X bintang, N ulasan" / "N ulasan dengan X bintang"
+                    if ((m = label.match(/(\d)\s*bintang[^\d]*([\d.,]+)\s*ulasan/i))) {
+                        star = +m[1]; count = +m[2].replace(/[.,]/g, '');
+                    } else if ((m = label.match(/([\d.,]+)\s*ulasan[^\d]*(\d)\s*bintang/i))) {
+                        count = +m[1].replace(/[.,]/g, ''); star = +m[2];
+                    }
+                    // English: "X stars, N reviews" / "N reviews with X stars"
+                    else if ((m = label.match(/(\d)\s*stars?[^\d]*([\d.,]+)\s*reviews?/i))) {
+                        star = +m[1]; count = +m[2].replace(/[.,]/g, '');
+                    } else if ((m = label.match(/([\d.,]+)\s*reviews?[^\d]*(\d)\s*stars?/i))) {
+                        count = +m[1].replace(/[.,]/g, ''); star = +m[2];
+                    }
+                    if (star !== null && count !== null && !isNaN(count) && star >= 1 && star <= 5) {
+                        // Take max — kadang aria-label muncul di beberapa elemen, kita pilih yang paling besar
+                        if (count > out[keys[star - 1]]) out[keys[star - 1]] = count;
+                        found = true;
+                    }
+                });
+
+                return found ? out : null;
+            }
+            """
+        )
+        if result:
+            total = sum(result.values())
+            log.info(f"  Review distribution: {result} (total={total})")
+        return result
+    except Exception as e:
+        log.debug(f"Review distribution scrape error: {e}")
+        return None
 
 
 # ============================================================================

@@ -1,0 +1,11 @@
+# Shell scripts WAJIB LF — kalau CRLF, Linux container exit langsung
+# karena kernel coba load '/usr/bin/env bash\r' sebagai interpreter.
+*.sh         text eol=lf
+docker/entrypoint.sh text eol=lf
+scr          text eol=lf
+
+# PowerShell native ke Windows — biarkan CRLF
+*.ps1        text eol=crlf
+
+# Default: auto (LF untuk text, kompatibel dengan Windows editor)
+*            text=auto

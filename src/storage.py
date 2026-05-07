@@ -2,14 +2,22 @@ import json
 import sqlite3
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from config import OUTPUT_DIR, PROGRESS_DB
-from src.transform import to_sync_item
+from config import output_dir, progress_db, get_keyword
+from src.transform import get_transformer
 
 WIB = timezone(timedelta(hours=7))
 
 
+def _connect() -> sqlite3.Connection:
+    """Open SQLite connection dengan busy_timeout — wajib untuk concurrent writes."""
+    conn = sqlite3.connect(progress_db(), timeout=10)
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
+
+
 def init_db() -> None:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS kelurahan_progress (
@@ -41,7 +49,7 @@ def init_db() -> None:
 
 
 def mark_started(kelurahan: str, kecamatan: str) -> None:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     conn.execute(
         """
         INSERT INTO kelurahan_progress (kelurahan, kecamatan, status, started_at)
@@ -56,7 +64,7 @@ def mark_started(kelurahan: str, kecamatan: str) -> None:
 
 
 def mark_done(kelurahan: str, shop_count: int) -> None:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     conn.execute(
         """
         UPDATE kelurahan_progress
@@ -70,7 +78,7 @@ def mark_done(kelurahan: str, shop_count: int) -> None:
 
 
 def mark_failed(kelurahan: str, error: str) -> None:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     conn.execute(
         """
         UPDATE kelurahan_progress
@@ -84,7 +92,7 @@ def mark_failed(kelurahan: str, error: str) -> None:
 
 
 def is_done(kelurahan: str) -> bool:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     row = conn.execute(
         "SELECT status FROM kelurahan_progress WHERE kelurahan=?", (kelurahan,)
     ).fetchone()
@@ -92,21 +100,22 @@ def is_done(kelurahan: str) -> bool:
     return row is not None and row[0] == "done"
 
 
-def save_raw_json(kelurahan: str, kecamatan: str, barbershops: list[dict]) -> Path:
+def save_raw_json(kelurahan: str, kecamatan: str, places: list[dict]) -> Path:
     """Simpan hasil scraping dalam SyncItem schema (langsung siap POST ke API).
 
-    Format file: array of SyncItem (lihat src/transform.py).
-    Metadata kelurahan/kecamatan tersimpan di progress.db, bukan di JSON.
+    Transformer dipilih berdasarkan keyword aktif (lihat src/transform.get_transformer).
+    Cafe/resto/kuliner pakai schema extended; lainnya pakai barbershop schema (default).
     """
-    items = [to_sync_item(s) for s in barbershops]
+    transform = get_transformer(get_keyword())
+    items = [transform(s, kecamatan=kecamatan) for s in places]
     safe_name = kelurahan.replace("/", "_").replace(" ", "_")
-    path = OUTPUT_DIR / f"{safe_name}.json"
+    path = output_dir() / f"{safe_name}.json"
     path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
     return path
 
 
 def progress_summary() -> dict:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     rows = conn.execute(
         "SELECT status, COUNT(*) FROM kelurahan_progress GROUP BY status"
     ).fetchall()
@@ -119,7 +128,7 @@ def progress_summary() -> dict:
 # ============================================================================
 
 def is_synced(file_stem: str) -> bool:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     row = conn.execute(
         "SELECT status FROM sync_progress WHERE file_stem=?", (file_stem,)
     ).fetchone()
@@ -128,7 +137,7 @@ def is_synced(file_stem: str) -> bool:
 
 
 def mark_synced(file_stem: str, inserted: int, skipped: int, errors_count: int) -> None:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     conn.execute(
         """
         INSERT INTO sync_progress (file_stem, status, inserted, skipped, errors_count, synced_at)
@@ -144,7 +153,7 @@ def mark_synced(file_stem: str, inserted: int, skipped: int, errors_count: int) 
 
 
 def mark_sync_failed(file_stem: str, error: str) -> None:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     conn.execute(
         """
         INSERT INTO sync_progress (file_stem, status, error, synced_at)
@@ -159,7 +168,7 @@ def mark_sync_failed(file_stem: str, error: str) -> None:
 
 
 def sync_summary() -> dict:
-    conn = sqlite3.connect(PROGRESS_DB)
+    conn = _connect()
     rows = conn.execute(
         "SELECT status, COUNT(*), COALESCE(SUM(inserted),0) FROM sync_progress GROUP BY status"
     ).fetchall()

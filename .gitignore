@@ -9,9 +9,15 @@ venv/
 *.db-journal
 data/output/
 data/output-from-vps/
+# Per-keyword output dirs (e.g. data/cafe/, data/barbershop/) — keluarahan_bandung.json tetap tracked
+data/*/
+!data/.gitkeep
+
 logs/
 .playwright/
 .DS_Store
 .claude/
 .idea/
 .vscode/
+
+backups/
