@@ -3,7 +3,7 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
-from web import __version__
+from server import __version__
 from server.models import HealthResponse
 from server.services.job_manager import DATA_DIR, count_active_jobs
 
