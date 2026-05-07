@@ -1,8 +1,8 @@
 # Server Setup Guide — Multi-VPS Parallel Scraping
 
 Dokumen ini step-by-step setup Server A & B untuk scrape parallel:
-- **Server A** (existing user `diosone`): 2 instance — cafe `1/2` + barbershop `1/3`
-- **Server B** (existing user `dios`): 3 instance — cafe `2/2` + barbershop `2/3` + barbershop `3/3`
+- **Server A** (`diosone@100.79.26.53`, Ubuntu + Docker): 2 instance — cafe `1/2` + barbershop `1/3`
+- **Server B** (`smoly@100.115.134.33` aka MiniServer, Bazzite + Podman): 3 instance — cafe `2/2` + barbershop `2/3` + barbershop `3/3`
 
 Asumsi: image `0.1.4` sudah di GHCR, baseline `progress.db` (cleaned, 76 cafe + 7 barbershop done) sudah ada di local.
 
@@ -91,9 +91,15 @@ docker exec -d scrapper python scripts/scraper.py --keyword barbershop --resume 
 
 ---
 
-## Server B — setup (dilakukan malam hari)
+## Server B — setup (MiniServer / Bazzite + Podman)
 
-Server B (`dios@<SERVER_B_IP>`) belum punya apa-apa. Full setup dari nol.
+Server B (`smoly@100.115.134.33` di tailnet shared dari `frmn.play@`) pakai **Bazzite** (Fedora Atomic, gaming OS) + **podman-compose** (bukan docker). Quirk yang perlu diingat:
+
+- **Tailscale SSH meng-hijack port 22 via tailnet IP** → password auth ditolak. Akses harus via:
+  - Cockpit web terminal: https://100.115.134.33:9090 (login `smoly` + password)
+  - LAN SSH ke `192.168.1.99` (kalau lo di subnet sama)
+  - Setelah ACL Tailscale di firumanusia di-update, baru bisa `tailscale ssh smoly@100.115.134.33`
+- **SELinux Enforcing** → bind mount Podman butuh suffix `:z` di compose, plus `chcon -Rt container_file_t` ke host dirs. Tanpa ini, SQLite WAL error `attempt to write a readonly database`.
 
 ### 1. Pre-flight di local — pastikan baseline `progress.db` belum ke-overwrite
 
@@ -120,14 +126,14 @@ copy "backups\snapshots\barbershop-progress-original.db" "data\barbershop\progre
 # Lalu re-run cleanup script (lihat history percakapan)
 ```
 
-### 2. SSH ke Server B + setup folder
+### 2. Akses Server B + setup folder
+
+Buka Cockpit di https://100.115.134.33:9090 → login `smoly` → Terminal. Lalu:
 
 ```bash
-ssh dios@<SERVER_B_IP>
-
-# Setup direktori
+# Setup direktori (smoly perlu password sudo)
 sudo mkdir -p /opt/scrapper
-sudo chown -R dios:dios /opt/scrapper
+sudo chown -R smoly:smoly /opt/scrapper
 cd /opt/scrapper
 mkdir -p data/cafe data/barbershop logs
 ```
@@ -155,19 +161,23 @@ python3 -c "import json; print(len(json.load(open('data/kelurahan_bandung.json')
 
 ### 4. Copy `progress.db` baseline dari local
 
-Dari **PowerShell di local**:
-```powershell
-$VPS_B = "<SERVER_B_IP>"
+Karena Tailscale SSH block password (`tailnet policy does not permit you to SSH to this node`), `scp` standar tidak jalan. 2 opsi:
 
-scp "C:\Users\Hype G12\Desktop\project\scrapper\data\cafe\progress.db" "dios@${VPS_B}:/opt/scrapper/data/cafe/progress.db"
-scp "C:\Users\Hype G12\Desktop\project\scrapper\data\barbershop\progress.db" "dios@${VPS_B}:/opt/scrapper/data/barbershop/progress.db"
-```
+**A. Via Cockpit Files** (paling simple): buka https://100.115.134.33:9090 → File → navigasi ke `/opt/scrapper/data/cafe/` → Upload `progress.db` dari local. Ulangi untuk barbershop.
 
-### 5. Pull image + start container di Server B
+**B. Via gist (kalau perlu otomatis dari local)**: base64-encode → upload ke secret gist via `gh gist create` → di MiniServer: `curl -fsSL <raw> | base64 -d > data/<keyword>/progress.db`. Hapus gist setelah selesai (`gh gist delete <id> --yes`).
+
+### 5. Patch compose untuk SELinux + pull image + start container di Server B
 
 ```bash
 cd /opt/scrapper
-docker compose pull          # pull v0.1.4 dari GHCR (~9s)
+
+# WAJIB di Bazzite: tambah ':z' ke bind mount + relabel host dirs
+sed -i -E 's|(- \./data:/app/data)$|\1:z|' docker-compose.yml
+sed -i -E 's|(- \./logs:/app/logs)$|\1:z|' docker-compose.yml
+sudo chcon -Rt container_file_t data logs
+
+docker compose pull          # podman-compose pull v0.1.4 dari GHCR
 docker compose up -d         # start container "scrapper"
 docker compose ps            # verify running
 ```
@@ -216,6 +226,24 @@ watch -n 600 "./scrape ps; echo; ./scrape progress cafe; echo; ./scrape progress
 ---
 
 ## Troubleshooting
+
+### Server B / Bazzite — `sqlite3.OperationalError: attempt to write a readonly database`
+
+SELinux + podman bind mount tanpa `:z` label. Fix:
+```bash
+cd /opt/scrapper
+sed -i -E 's|(- \./data:/app/data)$|\1:z|' docker-compose.yml
+sed -i -E 's|(- \./logs:/app/logs)$|\1:z|' docker-compose.yml
+sudo chcon -Rt container_file_t data logs
+docker compose down && docker compose up -d
+```
+Verify: `docker exec scrapper bash -c "echo t > /app/data/_w.txt && rm /app/data/_w.txt && echo OK"`
+
+### Server B — `tailscale: tailnet policy does not permit you to SSH to this node`
+
+Tailscale SSH override port 22 dan ACL belum izinkan user lo. Workaround:
+- Cockpit web terminal di https://<tailscale-ip>:9090 (selama Cockpit reachable)
+- Atau minta admin tailnet (firumanusia) update ACL untuk allow `dnahilman@github` SSH ke node sebagai `smoly`
 
 ### `./scrape progress` output kosong
 
@@ -284,15 +312,14 @@ docker exec -d scrapper python scripts/scraper.py --keyword cafe --resume --shar
 Dari PowerShell:
 ```powershell
 $VPS_A = "100.79.26.53"
-$VPS_B = "<SERVER_B_IP>"
 
 # Pull dari Server A — file dari shard 1/2 cafe + 1/3 barbershop
 rsync -avz "diosone@${VPS_A}:/opt/scrapper/data/cafe/"       "data/cafe/"
 rsync -avz "diosone@${VPS_A}:/opt/scrapper/data/barbershop/" "data/barbershop/"
 
-# Pull dari Server B — file dari shard 2/2 + 2/3 + 3/3 (disjoint, no overlap)
-rsync -avz "dios@${VPS_B}:/opt/scrapper/data/cafe/"          "data/cafe/"
-rsync -avz "dios@${VPS_B}:/opt/scrapper/data/barbershop/"    "data/barbershop/"
+# Pull dari Server B (MiniServer) — Tailscale SSH block scp/rsync via tailnet IP.
+# Pakai Cockpit Files (https://100.115.134.33:9090) untuk download per-folder ZIP,
+# atau ssh ke LAN IP 192.168.1.99 dari subnet sama, atau update ACL Tailscale dulu.
 ```
 
 ### 2. Verify count
@@ -331,10 +358,10 @@ URL repo image: https://github.com/dnahilman/scrapper-google-maps/pkgs/container
 
 | Server | Instance | Shard | Partition | After --resume |
 |---|---|---|---|---|
-| A | 1 | cafe `1/2` | 76 kel | 40 kel |
-| A | 2 | barbershop `1/3` | 51 kel | 48 kel |
-| B | 1 | cafe `2/2` | 75 kel | 35 kel |
-| B | 2 | barbershop `2/3` | 50 kel | 48 kel |
-| B | 3 | barbershop `3/3` | 50 kel | 48 kel |
+| A (`diosone`)  | 1 | cafe `1/2`       | 76 kel | 40 kel |
+| A (`diosone`)  | 2 | barbershop `1/3` | 51 kel | 48 kel |
+| B (`miniserver`) | 1 | cafe `2/2`       | 75 kel | 35 kel |
+| B (`miniserver`) | 2 | barbershop `2/3` | 50 kel | 48 kel |
+| B (`miniserver`) | 3 | barbershop `3/3` | 50 kel | 48 kel |
 
 **Total work:** 75 cafe + 144 barbershop = 219 kelurahan, terbagi disjoint antar 5 instance. Round-robin partition pakai posisi absolut di list 151, jadi gak peduli kapan tiap server start, partisi tetap fix.
