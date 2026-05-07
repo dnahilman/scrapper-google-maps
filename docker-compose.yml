@@ -40,7 +40,8 @@
 #   - dev    → branch dev terbaru (staging)
 services:
   scraper:
-    image: ghcr.io/dnahilman/scrapper-google-maps:0.1.4
+    build: .
+    image: scrapper:dev
     container_name: scrapper
     # .env.local opsional — kalau gak ada, env defaults di bawah cukup buat scrape-only.
     # Hanya di-load kalau exists (compose v2.24+).
