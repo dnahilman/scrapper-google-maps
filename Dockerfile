@@ -17,11 +17,11 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /build
 
 # Cache deps layer
-COPY frontend/package.json frontend/package-lock.json* ./
+COPY web/package.json web/package-lock.json* ./
 RUN npm ci --no-audit --no-fund
 
 # Build static
-COPY frontend/ ./
+COPY web/ ./
 RUN npm run build
 
 # ============================================================================
@@ -64,14 +64,12 @@ RUN pip install --no-cache-dir --no-compile -r requirements.txt \
 
 # Application code
 COPY config.py ./
-COPY src ./src
-COPY scripts ./scripts
-COPY web ./web
+COPY server ./server
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Static frontend dari stage 1 — hanya dist/ yang di-copy (node_modules di-discard)
-COPY --from=frontend-builder /build/dist /app/web/static
+COPY --from=frontend-builder /build/dist /app/server/static
 
 # Persistent dirs (akan di-bind mount ke host saat runtime)
 RUN mkdir -p /app/data /app/logs
@@ -87,4 +85,4 @@ ENTRYPOINT ["dumb-init", "--"]
 
 # Default mode: jalankan FastAPI + UI. Untuk legacy idle-daemon mode (sleep infinity),
 # override entrypoint: docker run --entrypoint /usr/local/bin/entrypoint.sh ... sleep infinity
-CMD ["uvicorn", "web.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

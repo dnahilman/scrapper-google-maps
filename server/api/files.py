@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
-from web.models import FileInfo
-from web.services.job_manager import DATA_DIR
+from server.models import FileInfo
+from server.services.job_manager import DATA_DIR
 
 router = APIRouter()
 

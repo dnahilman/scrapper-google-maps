@@ -24,7 +24,7 @@ Single Docker image bundles **FastAPI** (control plane API) + **Svelte** (UI rin
 
 API docs auto-generated di `/docs` (Swagger UI). Bash wrapper `./scrape` lama tetap bisa dipakai parallel — UI dan CLI share SQLite progress.db lewat WAL mode.
 
-> Frontend di-build di stage 1 (Node) lalu di-serve oleh FastAPI dari `web/static`. Tidak ada Node runtime di production image.
+> Frontend di-build di stage 1 (Node) lalu di-serve oleh FastAPI dari `server/static`. Tidak ada Node runtime di production image.
 
 ## Features
 
@@ -140,8 +140,8 @@ playwright install chromium              # download Chromium binary (~280 MB)
 cp .env.example .env.local
 
 # 4. Run langsung (helper ./scr tidak applicable — itu wrapper container)
-python scripts/scraper.py --keyword cafe --kelurahan "Cihapit" --limit 1
-python scripts/sync.py --keyword cafe --all
+python server/scripts/scraper.py --keyword cafe --kelurahan "Cihapit" --limit 1
+python server/scripts/sync.py --keyword cafe --all
 ```
 
 Set `HEADLESS=false` di `.env.local` kalau mau lihat browser saat scraping (debugging).
@@ -214,10 +214,10 @@ Semua command bisa di-prefix `--vps` (bash) atau `-Vps` (PS) untuk VPS mode.
 Kalau Anda di pure Python venv atau butuh kontrol penuh:
 
 ```bash
-python scripts/scraper.py --keyword cafe --kelurahan "Cihapit" --limit 5
-python scripts/scraper.py --keyword cafe --resume --auto-sync
-python scripts/sync.py --keyword cafe --all --force
-python scripts/migrate.py --keyword cafe                   # migrate old schema files
+python server/scripts/scraper.py --keyword cafe --kelurahan "Cihapit" --limit 5
+python server/scripts/scraper.py --keyword cafe --resume --auto-sync
+python server/scripts/sync.py --keyword cafe --all --force
+python server/scripts/migrate.py --keyword cafe                   # migrate old schema files
 ```
 
 Flag scraper:
@@ -302,7 +302,7 @@ Trigger: `--keyword cafe` atau `kafe`/`resto`/`restaurant`/`kuliner`.
 
 **Backward compat:** schema barbershop tetap 16 field — tidak ada field cafe-specific yang nyangkut. Frontend lama yang konsumsi schema barbershop tetap jalan tanpa perubahan.
 
-**Migration old data:** kalau ada file JSON lama dengan format `{kelurahan, barbershops}` (pre-refactor), pakai `python scripts/migrate.py --keyword cafe` untuk transform ke SyncItem array in-place.
+**Migration old data:** kalau ada file JSON lama dengan format `{kelurahan, barbershops}` (pre-refactor), pakai `python server/scripts/migrate.py --keyword cafe` untuk transform ke SyncItem array in-place.
 
 ---
 

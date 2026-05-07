@@ -43,10 +43,10 @@ README.md
 plans
 
 # Frontend build artifacts (di-build di multi-stage, tidak ikut context)
-frontend/node_modules
-frontend/dist
-frontend/.svelte-kit
-frontend/.vite
+web/node_modules
+web/dist
+web/.svelte-kit
+web/.vite
 
 # Tests (kalau ada)
 tests

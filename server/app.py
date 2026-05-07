@@ -1,10 +1,10 @@
 """FastAPI entry point — mount static UI + REST API.
 
 Run dev (lokal, tanpa Docker):
-    uvicorn web.app:app --reload --port 8000
+    uvicorn server.app:app --reload --port 8000
 
 Run production (di container, lihat Dockerfile CMD):
-    uvicorn web.app:app --host 0.0.0.0 --port 8000 --workers 1
+    uvicorn server.app:app --host 0.0.0.0 --port 8000 --workers 1
 """
 from pathlib import Path
 
@@ -13,15 +13,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from web import __version__
-from web.api import files as files_api
-from web.api import health as health_api
-from web.api import jobs as jobs_api
-from web.api import logs as logs_api
-from web.api import progress as progress_api
+from server import __version__
+from server.api import files as files_api
+from server.api import health as health_api
+from server.api import jobs as jobs_api
+from server.api import logs as logs_api
+from server.api import progress as progress_api
 
 ROOT = Path(__file__).resolve().parents[1]
-STATIC_DIR = ROOT / "web" / "static"
+STATIC_DIR = ROOT / "server" / "static"
 
 app = FastAPI(
     title="Google Maps Scraper Web UI",
@@ -83,7 +83,7 @@ else:
                 "ok": True,
                 "message": (
                     "FastAPI alive, tapi frontend belum di-build. "
-                    "Run `cd frontend && npm install && npm run build` "
+                    "Run `cd web && npm install && npm run build` "
                     "atau gunakan Docker image yang sudah multi-stage build."
                 ),
                 "api_docs": "/docs",

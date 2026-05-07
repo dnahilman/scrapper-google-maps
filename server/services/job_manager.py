@@ -3,7 +3,7 @@
 State source of truth: pidfile JSON di `data/<keyword>/.jobs/<job_id>.json`.
 Pakai psutil (cross-platform) untuk PID liveness check + signal.
 
-Integrasi dengan scraper existing: spawn `python scripts/scraper.py ...` sebagai
+Integrasi dengan scraper existing: spawn `python server/scripts/scraper.py ...` sebagai
 child process dari uvicorn worker. Stdout/stderr di-redirect ke `logs/job-<id>.log`.
 Scraper tetap menulis daily log `logs/scraper-YYYYMMDD.log` lewat logger internalnya.
 """
@@ -26,7 +26,7 @@ WIB = timezone(timedelta(hours=7))
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 LOG_DIR = ROOT / "logs"
-SCRAPER_SCRIPT = ROOT / "scripts" / "scraper.py"
+SCRAPER_SCRIPT = ROOT / "server" / "scripts" / "scraper.py"
 
 
 def _jobs_dir(keyword: str) -> Path:

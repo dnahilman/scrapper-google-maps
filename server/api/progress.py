@@ -8,8 +8,8 @@ import sqlite3
 
 from fastapi import APIRouter, HTTPException
 
-from web.models import KelurahanProgress, ProgressSummary
-from web.services.job_manager import DATA_DIR
+from server.models import KelurahanProgress, ProgressSummary
+from server.services.job_manager import DATA_DIR
 
 router = APIRouter()
 

@@ -4,8 +4,8 @@ from pathlib import Path
 from fastapi import APIRouter
 
 from web import __version__
-from web.models import HealthResponse
-from web.services.job_manager import DATA_DIR, count_active_jobs
+from server.models import HealthResponse
+from server.services.job_manager import DATA_DIR, count_active_jobs
 
 router = APIRouter()
 

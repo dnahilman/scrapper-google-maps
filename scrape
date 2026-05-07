@@ -102,7 +102,7 @@ cmd_run() {
   local keyword="$1"; shift
   _require_keyword "$keyword"
   echo "Menjalankan scraper keyword=$keyword (background, --resume) ..."
-  _execd python scripts/scraper.py --keyword "$keyword" --resume "$@"
+  _execd python server/scripts/scraper.py --keyword "$keyword" --resume "$@"
   echo "OK. Pantau log: ./scrape logfile $keyword"
 }
 
@@ -110,7 +110,7 @@ cmd_run_sync() {
   local keyword="$1"; shift
   _require_keyword "$keyword"
   echo "Menjalankan scraper keyword=$keyword + auto-sync (background, --resume) ..."
-  _execd python scripts/scraper.py --keyword "$keyword" --resume --auto-sync "$@"
+  _execd python server/scripts/scraper.py --keyword "$keyword" --resume --auto-sync "$@"
   echo "OK. Pantau log: ./scrape logfile $keyword"
 }
 
@@ -132,7 +132,7 @@ cmd_run_parallel() {
       echo "  Shard $i/$n: skip (max=$max tercapai, jalankan manual nanti)"
       continue
     fi
-    _execd python scripts/scraper.py --keyword "$keyword" --resume --shard "$i/$n"
+    _execd python server/scripts/scraper.py --keyword "$keyword" --resume --shard "$i/$n"
     echo "  Shard $i/$n: started"
     started=$((started + 1))
   done
@@ -141,13 +141,13 @@ cmd_run_parallel() {
 
 cmd_stop() {
   echo "Menghentikan proses scraper.py ..."
-  _exec pkill -f "scripts/scraper.py" && echo "Stopped." || echo "Tidak ada proses scraper yang jalan."
+  _exec pkill -f "server/scripts/scraper.py" && echo "Stopped." || echo "Tidak ada proses scraper yang jalan."
 }
 
 cmd_sync() {
   local keyword="$1"; shift
   _require_keyword "$keyword"
-  _exec python scripts/sync.py --keyword "$keyword" --all "$@"
+  _exec python server/scripts/sync.py --keyword "$keyword" --all "$@"
 }
 
 cmd_sync_one() {
@@ -155,13 +155,13 @@ cmd_sync_one() {
   local kelurahan="$2"
   _require_keyword "$keyword"
   if [ -z "$kelurahan" ]; then echo "Error: kelurahan wajib."; exit 1; fi
-  _exec python scripts/sync.py --keyword "$keyword" --kelurahan "$kelurahan"
+  _exec python server/scripts/sync.py --keyword "$keyword" --kelurahan "$kelurahan"
 }
 
 cmd_sync_dry() {
   local keyword="$1"
   _require_keyword "$keyword"
-  _exec python scripts/sync.py --keyword "$keyword" --all --dry-run
+  _exec python server/scripts/sync.py --keyword "$keyword" --all --dry-run
 }
 
 cmd_progress() {

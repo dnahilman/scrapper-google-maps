@@ -28,7 +28,7 @@ Server A (`diosone@100.79.26.53`) sudah jalan dengan:
 ssh diosone@100.79.26.53
 
 # 1. Stop scraper + remove container lama
-docker exec scrapper pkill -f "scripts/scraper.py" 2>/dev/null || true
+docker exec scrapper pkill -f "server/scripts/scraper.py" 2>/dev/null || true
 docker stop scrapper 2>/dev/null
 docker rm scrapper 2>/dev/null
 
@@ -81,8 +81,8 @@ print('API_KEY :', 'SET' if os.getenv('GOOGLE_MAPS_SYNC_API_KEY') else '(empty -
 ### Spawn 2 shard
 
 ```bash
-docker exec -d scrapper python scripts/scraper.py --keyword cafe --resume --shard 1/2
-docker exec -d scrapper python scripts/scraper.py --keyword barbershop --resume --shard 1/3
+docker exec -d scrapper python server/scripts/scraper.py --keyword cafe --resume --shard 1/2
+docker exec -d scrapper python server/scripts/scraper.py --keyword barbershop --resume --shard 1/3
 
 # Verify
 ./scrape ps
@@ -202,9 +202,9 @@ Kalau output kosong / 0 → progress.db belum ke-copy / file kosong, ulangi step
 ### 7. Spawn 3 shard
 
 ```bash
-docker exec -d scrapper python scripts/scraper.py --keyword cafe --resume --shard 2/2
-docker exec -d scrapper python scripts/scraper.py --keyword barbershop --resume --shard 2/3
-docker exec -d scrapper python scripts/scraper.py --keyword barbershop --resume --shard 3/3
+docker exec -d scrapper python server/scripts/scraper.py --keyword cafe --resume --shard 2/2
+docker exec -d scrapper python server/scripts/scraper.py --keyword barbershop --resume --shard 2/3
+docker exec -d scrapper python server/scripts/scraper.py --keyword barbershop --resume --shard 3/3
 
 # Verify
 ./scrape ps
@@ -299,7 +299,7 @@ cd /opt/scrapper
 docker compose restart
 
 # 4. Re-spawn shard yang stop (--resume otomatis skip done)
-docker exec -d scrapper python scripts/scraper.py --keyword cafe --resume --shard 2/2
+docker exec -d scrapper python server/scripts/scraper.py --keyword cafe --resume --shard 2/2
 # atau shard berapa pun yang stop
 ```
 
@@ -333,8 +333,8 @@ rsync -avz "diosone@${VPS_A}:/opt/scrapper/data/barbershop/" "data/barbershop/"
 
 Set API key + sync URLs di `.env.local` local, lalu:
 ```powershell
-python scripts/sync.py --keyword cafe --all
-python scripts/sync.py --keyword barbershop --all
+python server/scripts/sync.py --keyword cafe --all
+python server/scripts/sync.py --keyword barbershop --all
 ```
 
 `sync.py` skip file yang sudah `done` di `sync_progress` table — aman dijalankan ulang.

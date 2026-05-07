@@ -3,10 +3,10 @@ import asyncio
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from web.models import JobCreateRequest, JobInfo
-from web.services import job_manager
-from web.services.job_manager import LOG_DIR
-from web.services.log_tailer import sse_format, tail_file
+from server.models import JobCreateRequest, JobInfo
+from server.services import job_manager
+from server.services.job_manager import LOG_DIR
+from server.services.log_tailer import sse_format, tail_file
 
 router = APIRouter()
 
