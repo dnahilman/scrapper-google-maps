@@ -5,11 +5,8 @@ name: Build & Push Image
 #   - tag `v*`           → image tags semver: 1.5.0, 1.5, 1, latest
 #   - workflow_dispatch  → manual build (bisa pilih branch apa saja, tag custom)
 #
-# Push ke branch dev TIDAK trigger build — supaya bisa eksperimen / commit
-# kecil tanpa rebuild image setiap kali. Build sengaja dipicu manual atau
-# via tag release.
-#
-# Deploy auto ke VPS handled by .github/workflows/build-and-deploy.yml (push main).
+# Push ke branch mana pun TIDAK trigger build — build hanya via tag release
+# atau workflow_dispatch manual.
 
 on:
   push:
