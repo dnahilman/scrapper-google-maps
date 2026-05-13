@@ -14,6 +14,10 @@ var (
 	rePlaceIDQuery = regexp.MustCompile(`placeid=([^&]+)`)
 	reCoordsBang   = regexp.MustCompile(`!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)`)
 	reCoordsAt     = regexp.MustCompile(`@(-?\d+\.\d+),(-?\d+\.\d+)`)
+	reDataIDHex    = regexp.MustCompile(`(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)`)
+	reCIDHexTail   = regexp.MustCompile(`0x[0-9a-fA-F]+:0x([0-9a-fA-F]+)`)
+	reCIDQuery     = regexp.MustCompile(`[?&]cid=(\d+)`)
+	reFTID         = regexp.MustCompile(`!1[678]s([^!]+)`)
 
 	reEditedPrefix = regexp.MustCompile(`(?i)^diedit\s+`)
 )
@@ -82,6 +86,56 @@ func ExtractPlaceID(url string) string {
 	}
 	if m := rePlaceIDQuery.FindStringSubmatch(url); len(m) >= 2 {
 		return m[1]
+	}
+	return ""
+}
+
+// ExtractDataID returns the hex-form "0x...:0x..." identifier from a Google
+// Maps place URL, or "" when absent. This matches gosom's `data_id` field.
+func ExtractDataID(url string) string {
+	if m := reDataIDHex.FindStringSubmatch(url); len(m) >= 2 {
+		return m[1]
+	}
+	return ""
+}
+
+// ExtractCID returns Google's numeric Customer ID for the place. The CID is
+// the second hex group of the data_id ("0x...:0xCID"), converted to decimal.
+// Some URLs also expose it as `?cid=N` directly — we accept either form.
+// Returns "" when none was found.
+func ExtractCID(url string) string {
+	if m := reCIDQuery.FindStringSubmatch(url); len(m) >= 2 {
+		return m[1]
+	}
+	if m := reCIDHexTail.FindStringSubmatch(url); len(m) >= 2 {
+		// Decode the hex tail into decimal.
+		raw := strings.TrimPrefix(strings.ToLower(m[1]), "0x")
+		var n uint64
+		for _, c := range raw {
+			n <<= 4
+			switch {
+			case c >= '0' && c <= '9':
+				n |= uint64(c - '0')
+			case c >= 'a' && c <= 'f':
+				n |= uint64(c-'a') + 10
+			default:
+				return ""
+			}
+		}
+		return strconv.FormatUint(n, 10)
+	}
+	return ""
+}
+
+// ExtractFTID returns Google's Feature/Knowledge-graph ID (e.g. "/g/11rkkkdf95")
+// from a Maps URL — typically present as `!16s` or `!17s` in the data param.
+// Useful for de-duplicating the same place across multiple URL formats.
+func ExtractFTID(url string) string {
+	if m := reFTID.FindStringSubmatch(url); len(m) >= 2 {
+		// URL-decode "%2F" → "/" for the common path-style FTID.
+		s := strings.ReplaceAll(m[1], "%2F", "/")
+		s = strings.ReplaceAll(s, "%2f", "/")
+		return s
 	}
 	return ""
 }

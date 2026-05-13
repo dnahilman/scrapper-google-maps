@@ -73,6 +73,7 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 			CityName:            task.CityName,
 			KelurahanName:       task.KelurahanName,
 			KecamatanName:       task.KecamatanName,
+			EnableEmailCrawl:    e.cfg.EnableEmailCrawl,
 		})
 		if err != nil {
 			if errors.Is(err, ErrCaptcha) {

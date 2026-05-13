@@ -19,6 +19,8 @@ type PlaceOptions struct {
 	CityName      string
 	KelurahanName string
 	KecamatanName string
+	// EnableEmailCrawl turns on the post-scrape website fetch for emails.
+	EnableEmailCrawl bool
 }
 
 // ScrapePlace navigates to a place URL and extracts the gosom-style PlacePayload.
@@ -43,6 +45,8 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	p := &domain.PlacePayload{
 		Link:    target,
 		PlaceID: ExtractPlaceID(rawURL),
+		DataID:  ExtractDataID(rawURL),
+		Cid:     ExtractCID(rawURL),
 		Title:   safeText(page, SelTitle),
 	}
 
@@ -129,6 +133,15 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	// Menu tab (cafe / resto). Returns nil for places without a Menu tab.
 	if menu := ScrapeMenu(ctx, page); menu != nil {
 		p.Menu = menu
+	}
+
+	// Email crawl is opt-in because it adds an extra outbound HTTP fetch per
+	// place — the work happens off the Playwright page so it doesn't lock up
+	// the browser context.
+	if opts.EnableEmailCrawl && p.WebSite != "" {
+		if emails := CrawlEmails(ctx, p.WebSite); len(emails) > 0 {
+			p.Emails = emails
+		}
 	}
 
 	return p, nil
