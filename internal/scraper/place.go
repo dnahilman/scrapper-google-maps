@@ -11,10 +11,12 @@ import (
 
 // PlaceOptions controls optional/expensive extraction (reviews etc).
 type PlaceOptions struct {
-	MaxReviewsPerPlace int
-	MaxReviewAgeDays   int
+	MaxReviewsPerPlace  int
+	MaxReviewAgeDays    int
 	SortReviewsByNewest bool
-	SkipEmptyReviews   bool
+	SkipEmptyReviews    bool
+	// CityName is used to derive PlacePayload.Timezone via TimezoneForCity.
+	CityName string
 }
 
 // ScrapePlace navigates to a place URL and extracts the gosom-style PlacePayload.
@@ -69,6 +71,12 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	}
 
 	p.Status = scrapeStatus(page)
+
+	// Small metadata scrapes that live on the default panel.
+	p.PriceRange = ScrapePriceRange(page)
+	p.Description = ScrapeDescription(page)
+	p.ReviewsLink = ReviewsLink(page, target)
+	p.Timezone = TimezoneForCity(opts.CityName)
 
 	// Default-panel scrapes — gallery / popular_times / owner / hours all live
 	// on the place's first panel, so capture them before any tab switch.

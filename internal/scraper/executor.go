@@ -70,6 +70,7 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 			MaxReviewAgeDays:    e.cfg.MaxReviewAgeDays,
 			SortReviewsByNewest: e.cfg.SortReviewsNewest,
 			SkipEmptyReviews:    e.cfg.SkipEmptyReviews,
+			CityName:            task.CityName,
 		})
 		if err != nil {
 			if errors.Is(err, ErrCaptcha) {
