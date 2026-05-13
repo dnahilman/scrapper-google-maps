@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/dnahilman/scrapper-go/internal/config"
 	"github.com/dnahilman/scrapper-go/internal/logger"
+	"github.com/dnahilman/scrapper-go/internal/scraper"
 	"github.com/dnahilman/scrapper-go/internal/version"
 	"github.com/dnahilman/scrapper-go/internal/workeragent"
 )
@@ -19,13 +22,23 @@ func main() {
 	}
 	logger.Setup(cfg.LogLevel, cfg.LogFormat)
 	log := logger.L()
-	log.Info().Str("version", version.Version).Str("master", cfg.MasterURL).Int("concurrency", cfg.MaxConcurrency).Msg("worker starting")
+	log.Info().
+		Str("version", version.Version).
+		Str("master", cfg.MasterURL).
+		Int("concurrency", cfg.MaxConcurrency).
+		Bool("headless", cfg.Headless).
+		Msg("worker starting")
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	// Phase 1 uses NoopExecutor. Phase 3 will swap this for a Playwright-Go scraper.
-	exec := &workeragent.NoopExecutor{Delay: 2 * time.Second}
+	var exec workeragent.Executor
+	if strings.EqualFold(os.Getenv("SCRAPER"), "noop") {
+		log.Info().Msg("using NoopExecutor (set SCRAPER!=noop for real Playwright)")
+		exec = &workeragent.NoopExecutor{Delay: 2 * time.Second}
+	} else {
+		exec = scraper.NewPlaywrightExecutor(cfg, logger.L())
+	}
 
 	agent := workeragent.New(cfg, exec)
 	if err := agent.Run(ctx); err != nil {
