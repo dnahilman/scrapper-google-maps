@@ -70,8 +70,18 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 
 	p.Status = scrapeStatus(page)
 
-	// Hours toggle lives on the default panel — scrape before opening other tabs
-	// so we don't have to navigate back.
+	// Default-panel scrapes — gallery / popular_times / owner / hours all live
+	// on the place's first panel, so capture them before any tab switch.
+	if thumb, gallery := ScrapeImages(page, 20); len(gallery) > 0 {
+		p.Thumbnail = thumb
+		p.Images = gallery
+	}
+	if pt := ScrapePopularTimes(page); len(pt) > 0 {
+		p.PopularTimes = pt
+	}
+	if owner := ScrapeOwner(page); owner != nil {
+		p.Owner = owner
+	}
 	if hours := ScrapeHours(ctx, page); len(hours) > 0 {
 		p.OpenHours = hours
 	}
