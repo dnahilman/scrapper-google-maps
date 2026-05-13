@@ -15,8 +15,10 @@ type PlaceOptions struct {
 	MaxReviewAgeDays    int
 	SortReviewsByNewest bool
 	SkipEmptyReviews    bool
-	// CityName is used to derive PlacePayload.Timezone via TimezoneForCity.
-	CityName string
+	// Task context used to derive PlacePayload.Timezone and CompleteAddress.
+	CityName      string
+	KelurahanName string
+	KecamatanName string
 }
 
 // ScrapePlace navigates to a place URL and extracts the gosom-style PlacePayload.
@@ -65,6 +67,10 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	p.PlusCode = safeText(page, SelPlusCodeBtn)
 	p.Category = safeText(page, SelCategoryBtn)
 
+	if ca := ParseCompleteAddress(p.Address, opts.KelurahanName, opts.KecamatanName, opts.CityName); ca != nil {
+		p.CompleteAddress = ca
+	}
+
 	if lat, lng, ok := ExtractCoords(rawURL); ok {
 		p.Latitude = lat
 		p.Longtitude = lng
@@ -77,6 +83,12 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	p.Description = ScrapeDescription(page)
 	p.ReviewsLink = ReviewsLink(page, target)
 	p.Timezone = TimezoneForCity(opts.CityName)
+
+	// External booking + delivery links (still on the default panel).
+	if res, ord := ScrapeExternalLinks(page); len(res) > 0 || len(ord) > 0 {
+		p.Reservations = res
+		p.OrderOnline = ord
+	}
 
 	// Default-panel scrapes — gallery / popular_times / owner / hours all live
 	// on the place's first panel, so capture them before any tab switch.

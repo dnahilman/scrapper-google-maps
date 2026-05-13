@@ -71,6 +71,8 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 			SortReviewsByNewest: e.cfg.SortReviewsNewest,
 			SkipEmptyReviews:    e.cfg.SkipEmptyReviews,
 			CityName:            task.CityName,
+			KelurahanName:       task.KelurahanName,
+			KecamatanName:       task.KecamatanName,
 		})
 		if err != nil {
 			if errors.Is(err, ErrCaptcha) {
