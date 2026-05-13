@@ -65,7 +65,12 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 		if ctx.Err() != nil {
 			return out, ctx.Err()
 		}
-		p, err := ScrapePlace(ctx, page, u, e.cfg.MinDelaySec, e.cfg.MaxDelaySec)
+		p, err := ScrapePlace(ctx, page, u, e.cfg.MinDelaySec, e.cfg.MaxDelaySec, PlaceOptions{
+			MaxReviewsPerPlace:  e.cfg.MaxReviewsPerPlace,
+			MaxReviewAgeDays:    e.cfg.MaxReviewAgeDays,
+			SortReviewsByNewest: e.cfg.SortReviewsNewest,
+			SkipEmptyReviews:    e.cfg.SkipEmptyReviews,
+		})
 		if err != nil {
 			if errors.Is(err, ErrCaptcha) {
 				log.Warn().Msg("captcha hit during place detail; aborting task")

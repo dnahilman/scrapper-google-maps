@@ -9,9 +9,17 @@ import (
 	"github.com/dnahilman/scrapper-go/internal/domain"
 )
 
-// ScrapePlace navigates to a place URL and extracts the core gosom-style
-// PlacePayload. Returns nil if the detail panel never loaded.
-func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDelay, maxDelay int) (*domain.PlacePayload, error) {
+// PlaceOptions controls optional/expensive extraction (reviews etc).
+type PlaceOptions struct {
+	MaxReviewsPerPlace int
+	MaxReviewAgeDays   int
+	SortReviewsByNewest bool
+	SkipEmptyReviews   bool
+}
+
+// ScrapePlace navigates to a place URL and extracts the gosom-style PlacePayload.
+// Returns nil if the detail panel never loaded.
+func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDelay, maxDelay int, opts PlaceOptions) (*domain.PlacePayload, error) {
 	target := addQueryParam(rawURL, "hl", "id")
 	if _, err := page.Goto(target, playwright.PageGotoOptions{
 		WaitUntil: playwright.WaitUntilStateDomcontentloaded,
@@ -61,6 +69,24 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	}
 
 	p.Status = scrapeStatus(page)
+
+	// Reviews + per-rating histogram (requires opening the Reviews tab).
+	if opts.MaxReviewsPerPlace != 0 {
+		reviews := ScrapeReviews(ctx, page, ReviewsOptions{
+			Max:          opts.MaxReviewsPerPlace,
+			MaxAgeDays:   opts.MaxReviewAgeDays,
+			SortByNewest: opts.SortReviewsByNewest,
+			SkipEmpty:    opts.SkipEmptyReviews,
+		})
+		p.UserReviews = reviews
+
+		// Histogram aria-labels are populated after the Reviews tab opens,
+		// so we scrape it here while still in that view.
+		if dist := ScrapeReviewsPerRating(page); len(dist) > 0 {
+			p.ReviewsPerRating = dist
+		}
+	}
+
 	return p, nil
 }
 
