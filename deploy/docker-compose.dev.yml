@@ -1,0 +1,18 @@
+name: scrapper-dev
+
+# Override for local development: faster delays + console log format.
+# Run alongside docker-compose.yml:
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up -d --build
+
+services:
+  master:
+    environment:
+      LOG_LEVEL: debug
+      LOG_FORMAT: console
+
+  worker:
+    environment:
+      LOG_LEVEL: debug
+      LOG_FORMAT: console
+      MIN_DELAY_SEC: 3
+      MAX_DELAY_SEC: 8

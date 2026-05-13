@@ -1,0 +1,25 @@
+name: scrapper-worker
+
+# Worker-only stack, for deploying to remote VPS (diosone, MiniServer, dst).
+# Requires .env with MASTER_URL, MASTER_TOKEN, WORKER_NAME.
+
+services:
+  worker:
+    image: ghcr.io/dnahilman/scrapper-worker:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      MASTER_URL: ${MASTER_URL:?required}
+      MASTER_TOKEN: ${MASTER_TOKEN:?required}
+      WORKER_NAME: ${WORKER_NAME:-${HOSTNAME}}
+      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-2}
+      HEADLESS: "true"
+      MIN_DELAY_SEC: ${MIN_DELAY_SEC:-10}
+      MAX_DELAY_SEC: ${MAX_DELAY_SEC:-25}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    shm_size: 1gb
+    volumes:
+      - worker-data:/app/data
+
+volumes:
+  worker-data:

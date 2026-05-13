@@ -23,6 +23,20 @@ logs/
 backups/
 transformer/
 
+# Go build artifacts
+/bin/
+/dist/
+/out/
+*.exe
+*.test
+*.out
+vendor/
+go.work
+go.sum.bak
+
+# Postgres data volume
+/pgdata/
+
 # Frontend (Svelte) build artifacts — di-build oleh Docker multi-stage
 web/node_modules/
 web/dist/

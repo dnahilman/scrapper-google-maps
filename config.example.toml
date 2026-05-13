@@ -1,0 +1,43 @@
+# Scrapper-Go runtime configuration
+# Values here can be overridden by environment variables.
+
+[http]
+addr = ":8080"
+cors_origins = ["*"]
+
+[database]
+url = "postgres://scrapper:changeme@localhost:5432/scrapper?sslmode=disable"
+max_open_conns = 25
+max_idle_conns = 10
+
+[logging]
+level = "info"
+format = "json"
+
+[scraper]
+min_delay_sec = 10
+max_delay_sec = 25
+max_reviews_per_place = 200
+max_review_age_days = 730
+skip_empty_reviews = true
+sort_reviews_by_newest = true
+max_captcha_retry = 2
+enable_email_crawl = false
+
+[worker]
+max_concurrency = 2
+heartbeat_interval_sec = 15
+task_timeout_min = 30
+
+[reaper]
+interval_sec = 30
+dead_after_min = 2
+
+[emsifa]
+base_url = "https://emsifa.github.io/api-wilayah-indonesia/api"
+
+[sync]
+enabled = true
+url = ""
+api_key = ""
+retry_max = 5
