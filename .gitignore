@@ -21,6 +21,7 @@ logs/
 .vscode/
 
 backups/
+transformer/
 
 # Frontend (Svelte) build artifacts — di-build oleh Docker multi-stage
 web/node_modules/

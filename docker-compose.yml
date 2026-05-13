@@ -43,8 +43,6 @@ services:
     build: .
     image: scrapper:dev
     container_name: scrapper
-    # .env.local opsional — kalau gak ada, env defaults di bawah cukup buat scrape-only.
-    # Hanya di-load kalau exists (compose v2.24+).
     env_file:
       - path: .env.local
         required: false
