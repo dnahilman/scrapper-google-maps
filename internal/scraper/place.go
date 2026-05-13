@@ -70,7 +70,13 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 
 	p.Status = scrapeStatus(page)
 
-	// Reviews + per-rating histogram (requires opening the Reviews tab).
+	// Hours toggle lives on the default panel — scrape before opening other tabs
+	// so we don't have to navigate back.
+	if hours := ScrapeHours(ctx, page); len(hours) > 0 {
+		p.OpenHours = hours
+	}
+
+	// Reviews tab — also unlocks the per-rating histogram aria-labels.
 	if opts.MaxReviewsPerPlace != 0 {
 		reviews := ScrapeReviews(ctx, page, ReviewsOptions{
 			Max:          opts.MaxReviewsPerPlace,
@@ -79,12 +85,20 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 			SkipEmpty:    opts.SkipEmptyReviews,
 		})
 		p.UserReviews = reviews
-
-		// Histogram aria-labels are populated after the Reviews tab opens,
-		// so we scrape it here while still in that view.
 		if dist := ScrapeReviewsPerRating(page); len(dist) > 0 {
 			p.ReviewsPerRating = dist
 		}
+	}
+
+	// About tab (amenities, payment, accessibility) — switching tabs is OK
+	// because we've already captured everything from the default panel above.
+	if about := ScrapeAbout(ctx, page); len(about) > 0 {
+		p.About = about
+	}
+
+	// Menu tab (cafe / resto). Returns nil for places without a Menu tab.
+	if menu := ScrapeMenu(ctx, page); menu != nil {
+		p.Menu = menu
 	}
 
 	return p, nil

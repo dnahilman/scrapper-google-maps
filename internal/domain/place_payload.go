@@ -14,6 +14,22 @@ type LinkSource struct {
 	Source string `json:"source"`
 }
 
+// MenuItem is a single dish/product extracted from the in-page Menu tab.
+type MenuItem struct {
+	Name  string `json:"name"`
+	Price string `json:"price,omitempty"`
+}
+
+// MenuPayload extends gosom's `LinkSource` shape with the items and photos
+// pulled from the Google Maps in-place Menu tab. Pure-gosom consumers can
+// still read the `link`/`source` keys; richer consumers see `items`/`photos`.
+type MenuPayload struct {
+	Link   string     `json:"link,omitempty"`
+	Source string     `json:"source,omitempty"`
+	Items  []MenuItem `json:"items,omitempty"`
+	Photos []string   `json:"photos,omitempty"`
+}
+
 type Owner struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -90,7 +106,7 @@ type PlacePayload struct {
 	Images           []Image                `json:"images,omitempty"`
 	Reservations     []LinkSource           `json:"reservations,omitempty"`
 	OrderOnline      []LinkSource           `json:"order_online,omitempty"`
-	Menu             *LinkSource            `json:"menu,omitempty"`
+	Menu             *MenuPayload           `json:"menu,omitempty"`
 	Owner            *Owner                 `json:"owner,omitempty"`
 	CompleteAddress  *CompleteAddress       `json:"complete_address,omitempty"`
 	About            []About                `json:"about,omitempty"`
