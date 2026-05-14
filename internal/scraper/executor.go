@@ -16,8 +16,10 @@ import (
 // jobOptions mirrors the per-job knobs we expect inside ClaimedTask.Options
 // (raw JSONB). All fields are optional; zero values fall back to worker env.
 type jobOptions struct {
-	LimitPerKelurahan  int  `json:"limit_per_kelurahan"`
-	MaxReviewsPerPlace *int `json:"max_reviews_per_place,omitempty"`
+	LimitPerKelurahan  int   `json:"limit_per_kelurahan"`
+	MaxReviewsPerPlace *int  `json:"max_reviews_per_place,omitempty"`
+	MinReviewAgeDays   *int  `json:"min_review_age_days,omitempty"` // drop reviews newer than N days
+	MaxReviewAgeDays   *int  `json:"max_review_age_days,omitempty"` // drop reviews older than N days
 	EnableEmailCrawl   *bool `json:"enable_email_crawl,omitempty"`
 }
 
@@ -66,6 +68,14 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 	if jobOpts.MaxReviewsPerPlace != nil {
 		maxReviews = *jobOpts.MaxReviewsPerPlace
 	}
+	maxReviewAge := e.cfg.MaxReviewAgeDays
+	if jobOpts.MaxReviewAgeDays != nil {
+		maxReviewAge = *jobOpts.MaxReviewAgeDays
+	}
+	minReviewAge := 0
+	if jobOpts.MinReviewAgeDays != nil {
+		minReviewAge = *jobOpts.MinReviewAgeDays
+	}
 	enableEmails := e.cfg.EnableEmailCrawl
 	if jobOpts.EnableEmailCrawl != nil {
 		enableEmails = *jobOpts.EnableEmailCrawl
@@ -90,7 +100,8 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 		}
 		p, err := ScrapePlace(ctx, page, u, e.cfg.MinDelaySec, e.cfg.MaxDelaySec, PlaceOptions{
 			MaxReviewsPerPlace:  maxReviews,
-			MaxReviewAgeDays:    e.cfg.MaxReviewAgeDays,
+			MinReviewAgeDays:    minReviewAge,
+			MaxReviewAgeDays:    maxReviewAge,
 			SortReviewsByNewest: e.cfg.SortReviewsNewest,
 			SkipEmptyReviews:    e.cfg.SkipEmptyReviews,
 			CityName:            task.CityName,

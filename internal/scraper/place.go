@@ -12,7 +12,8 @@ import (
 // PlaceOptions controls optional/expensive extraction (reviews etc).
 type PlaceOptions struct {
 	MaxReviewsPerPlace  int
-	MaxReviewAgeDays    int
+	MinReviewAgeDays    int // skip reviews newer than this
+	MaxReviewAgeDays    int // skip reviews older than this
 	SortReviewsByNewest bool
 	SkipEmptyReviews    bool
 	// Task context used to derive PlacePayload.Timezone and CompleteAddress.
@@ -114,6 +115,7 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	if opts.MaxReviewsPerPlace != 0 {
 		reviews := ScrapeReviews(ctx, page, ReviewsOptions{
 			Max:          opts.MaxReviewsPerPlace,
+			MinAgeDays:   opts.MinReviewAgeDays,
 			MaxAgeDays:   opts.MaxReviewAgeDays,
 			SortByNewest: opts.SortReviewsByNewest,
 			SkipEmpty:    opts.SkipEmptyReviews,

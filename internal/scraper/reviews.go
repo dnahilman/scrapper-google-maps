@@ -12,10 +12,11 @@ import (
 
 // ReviewsOptions controls the reviews scraping behaviour.
 type ReviewsOptions struct {
-	Max               int  // hard cap on reviews kept (0 = no cap)
-	MaxAgeDays        int  // skip reviews older than this (0 = keep all)
-	SortByNewest      bool // click sort → "Terbaru/Newest" before scraping
-	SkipEmpty         bool // drop reviews whose text is < 3 chars
+	Max          int  // hard cap on reviews kept (0 = no cap)
+	MinAgeDays   int  // skip reviews newer than this (0 = include newest)
+	MaxAgeDays   int  // skip reviews older than this (0 = keep all)
+	SortByNewest bool // click sort → "Terbaru/Newest" before scraping
+	SkipEmpty    bool // drop reviews whose text is < 3 chars
 }
 
 // reviewCardJS extracts every fielded payload from a single [data-review-id]
@@ -200,6 +201,9 @@ func ScrapeReviews(ctx context.Context, page playwright.Page, opts ReviewsOption
 		if opts.MaxAgeDays > 0 && ageDays > 0 && ageDays > opts.MaxAgeDays {
 			continue
 		}
+		if opts.MinAgeDays > 0 && ageDays >= 0 && ageDays < opts.MinAgeDays {
+			continue
+		}
 
 		rp := domain.ReviewPayload{
 			ReviewID:       raw.ReviewID,
@@ -277,6 +281,40 @@ func acquireScrollHandle(page playwright.Page) playwright.JSHandle {
 	return h
 }
 
+// waitForNewReviews polls the review-card count until it grows past `prev`
+// or `timeout` elapses, returning the latest count. Lets the scroll loop
+// be patient with Google's lazy loader instead of using a fixed sleep.
+func waitForNewReviews(ctx context.Context, page playwright.Page, prev int, timeout time.Duration) int {
+	deadline := time.Now().Add(timeout)
+	last := prev
+	for {
+		select {
+		case <-ctx.Done():
+			return last
+		case <-time.After(700 * time.Millisecond):
+		}
+		count, _ := page.Locator("div[data-review-id]").Count()
+		last = count
+		if count > prev {
+			return count
+		}
+		if time.Now().After(deadline) {
+			return count
+		}
+	}
+}
+
+// scroll constants are tuned against Google's reviews tab lazy-loader, which
+// fetches batches of ~10 every few seconds. We must give Google enough time
+// to fetch before checking the count, and we must be patient when no new
+// reviews appear (might mean Google is still fetching, or might mean we've
+// hit the end — keep trying until stuck for several rounds).
+const (
+	reviewScrollMaxStuck    = 8
+	reviewScrollWaitWindow  = 6 * time.Second
+	reviewScrollKicksPerRnd = 3 // emit several scroll triggers per round
+)
+
 // scrollReviewsList scrolls the reviews container until no new entries appear,
 // the hard cap is reached, or the oldest visible review crosses MaxAgeDays.
 func scrollReviewsList(ctx context.Context, page playwright.Page, handle playwright.JSHandle, opts ReviewsOptions) {
@@ -286,19 +324,28 @@ func scrollReviewsList(ctx context.Context, page playwright.Page, handle playwri
 		if ctx.Err() != nil {
 			return
 		}
-		scrolled := false
-		if handle != nil {
-			if _, err := handle.Evaluate("el => el && el.scrollTo(0, el.scrollHeight)", nil); err == nil {
-				scrolled = true
+		// Multiple scroll triggers per round — both scrollTo() and a mouse
+		// wheel event so Google's IntersectionObserver / wheel listener both
+		// fire. Some UI variants only respond to one or the other.
+		for k := 0; k < reviewScrollKicksPerRnd; k++ {
+			if handle != nil {
+				_, _ = handle.Evaluate("el => el && el.scrollTo(0, el.scrollHeight)", nil)
+			}
+			_ = page.Mouse().Wheel(0, 6000)
+			if k < reviewScrollKicksPerRnd-1 {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(250 * time.Millisecond):
+				}
 			}
 		}
-		if !scrolled {
-			_ = page.Mouse().Wheel(0, 4000)
-		}
 
-		HumanDelay(ctx, 0, 0, true)
+		// Wait for Google's lazy loader to fetch the next batch — poll the
+		// review count up to reviewScrollWaitWindow before deciding nothing
+		// new arrived.
+		count := waitForNewReviews(ctx, page, prev, reviewScrollWaitWindow)
 
-		count, _ := page.Locator("div[data-review-id]").Count()
 		if opts.Max > 0 && count >= opts.Max {
 			return
 		}
@@ -313,7 +360,7 @@ func scrollReviewsList(ctx context.Context, page playwright.Page, handle playwri
 
 		if count == prev {
 			stuck++
-			if stuck >= 3 {
+			if stuck >= reviewScrollMaxStuck {
 				return
 			}
 		} else {
