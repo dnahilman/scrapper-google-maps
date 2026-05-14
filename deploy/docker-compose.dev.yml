@@ -14,5 +14,5 @@ services:
     environment:
       LOG_LEVEL: debug
       LOG_FORMAT: console
-      MIN_DELAY_SEC: 3
-      MAX_DELAY_SEC: 8
+      MIN_DELAY_SEC: "3"
+      MAX_DELAY_SEC: "8"

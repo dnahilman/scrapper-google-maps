@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -11,6 +12,14 @@ import (
 	"github.com/dnahilman/scrapper-go/internal/domain"
 	"github.com/dnahilman/scrapper-go/internal/queue"
 )
+
+// jobOptions mirrors the per-job knobs we expect inside ClaimedTask.Options
+// (raw JSONB). All fields are optional; zero values fall back to worker env.
+type jobOptions struct {
+	LimitPerKelurahan  int  `json:"limit_per_kelurahan"`
+	MaxReviewsPerPlace *int `json:"max_reviews_per_place,omitempty"`
+	EnableEmailCrawl   *bool `json:"enable_email_crawl,omitempty"`
+}
 
 // PlaywrightExecutor implements workeragent.Executor by driving Chromium
 // via playwright-go. It opens one fresh Session per Execute() call so each
@@ -48,9 +57,23 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 		_ = page.Close()
 	}()
 
+	var jobOpts jobOptions
+	if len(task.Options) > 0 {
+		_ = json.Unmarshal(task.Options, &jobOpts)
+	}
+
+	maxReviews := e.cfg.MaxReviewsPerPlace
+	if jobOpts.MaxReviewsPerPlace != nil {
+		maxReviews = *jobOpts.MaxReviewsPerPlace
+	}
+	enableEmails := e.cfg.EnableEmailCrawl
+	if jobOpts.EnableEmailCrawl != nil {
+		enableEmails = *jobOpts.EnableEmailCrawl
+	}
+
 	urls, err := Search(ctx, page, task.Keyword,
 		task.KelurahanName, task.KecamatanName, task.CityName,
-		0, // no per-task URL cap by default
+		jobOpts.LimitPerKelurahan,
 		e.cfg.MinDelaySec, e.cfg.MaxDelaySec)
 	if err != nil {
 		if errors.Is(err, ErrCaptcha) {
@@ -66,14 +89,14 @@ func (e *PlaywrightExecutor) Execute(ctx context.Context, task *queue.ClaimedTas
 			return out, ctx.Err()
 		}
 		p, err := ScrapePlace(ctx, page, u, e.cfg.MinDelaySec, e.cfg.MaxDelaySec, PlaceOptions{
-			MaxReviewsPerPlace:  e.cfg.MaxReviewsPerPlace,
+			MaxReviewsPerPlace:  maxReviews,
 			MaxReviewAgeDays:    e.cfg.MaxReviewAgeDays,
 			SortReviewsByNewest: e.cfg.SortReviewsNewest,
 			SkipEmptyReviews:    e.cfg.SkipEmptyReviews,
 			CityName:            task.CityName,
 			KelurahanName:       task.KelurahanName,
 			KecamatanName:       task.KecamatanName,
-			EnableEmailCrawl:    e.cfg.EnableEmailCrawl,
+			EnableEmailCrawl:    enableEmails,
 		})
 		if err != nil {
 			if errors.Is(err, ErrCaptcha) {

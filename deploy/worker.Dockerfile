@@ -11,10 +11,15 @@ RUN CGO_ENABLED=0 GOOS=linux \
     go build -ldflags="-s -w" -o /out/worker ./cmd/worker
 
 # ---------- Stage 2: Playwright base (Chromium preinstalled) ----------
-FROM mcr.microsoft.com/playwright:v1.49.0-jammy
+# Image tag MUST match the playwright version embedded in playwright-go
+# (currently v1.57). The Microsoft image ships browsers under /ms-playwright.
+FROM mcr.microsoft.com/playwright:v1.57.0-jammy
 WORKDIR /app
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 COPY --from=build /out/worker /app/worker
 
-RUN useradd -m -u 1000 worker && chown -R worker:worker /app
-USER worker
+# The base image already provides a 'pwuser' (uid 1000). Reuse it instead of
+# trying to add a duplicate.
+RUN chown -R 1000:1000 /app
+USER 1000
 ENTRYPOINT ["/app/worker"]

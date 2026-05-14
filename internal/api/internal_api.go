@@ -182,6 +182,10 @@ func submitPlaces(d *Deps) gin.HandlerFunc {
 				rating := rv.Rating
 				ageDays := rv.AgeDays
 				orJSON, _ := json.Marshal(rv.OwnerResponse)
+				imgs := domain.StringArray(rv.Images)
+				if imgs == nil {
+					imgs = domain.StringArray{}
+				}
 				reviews = append(reviews, domain.Review{
 					PlaceID:        p.PlaceID,
 					ReviewID:       rv.ReviewID,
@@ -189,7 +193,7 @@ func submitPlaces(d *Deps) gin.HandlerFunc {
 					ProfilePicture: rv.ProfilePicture,
 					Rating:         &rating,
 					Description:    rv.Description,
-					Images:         rv.Images,
+					Images:         imgs,
 					WhenText:       rv.When,
 					AgeDays:        &ageDays,
 					OwnerResponse:  domain.JSONB(orJSON),
@@ -220,6 +224,22 @@ func payloadToPlace(req *SubmitPlacesRequest, p *domain.PlacePayload) *domain.Pl
 	ownerJSON, _ := json.Marshal(p.Owner)
 	aboutJSON, _ := json.Marshal(p.About)
 
+	// `categories` is NOT NULL in DB; backfill from the singular `category`
+	// when the scraper only captured one label so the upsert succeeds.
+	categories := domain.StringArray(p.Categories)
+	if len(categories) == 0 {
+		if p.Category != "" {
+			categories = domain.StringArray{p.Category}
+		} else {
+			categories = domain.StringArray{}
+		}
+	}
+
+	emails := domain.StringArray(p.Emails)
+	if emails == nil {
+		emails = domain.StringArray{}
+	}
+
 	out := &domain.Place{
 		TaskID:           &req.TaskID,
 		KelurahanID:      &req.KelurahanID,
@@ -228,7 +248,7 @@ func payloadToPlace(req *SubmitPlacesRequest, p *domain.PlacePayload) *domain.Pl
 		DataID:           p.DataID,
 		Cid:              p.Cid,
 		Title:            p.Title,
-		Categories:       p.Categories,
+		Categories:       categories,
 		Category:         p.Category,
 		Address:          p.Address,
 		CompleteAddress:  domain.JSONB(addrJSON),
@@ -254,7 +274,7 @@ func payloadToPlace(req *SubmitPlacesRequest, p *domain.PlacePayload) *domain.Pl
 		Menu:             domain.JSONB(menuJSON),
 		Owner:            domain.JSONB(ownerJSON),
 		About:            domain.JSONB(aboutJSON),
-		Emails:           p.Emails,
+		Emails:           emails,
 	}
 	return out
 }

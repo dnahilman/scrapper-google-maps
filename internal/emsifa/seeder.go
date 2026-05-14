@@ -84,11 +84,21 @@ func (s *Seeder) SyncKelurahan(ctx context.Context, city *domain.City) (int, err
 
 var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
 
+// slugify converts a city name to a URL-safe slug, preserving the kota/kab
+// prefix so "Kota Bandung" and "Kabupaten Bandung" produce distinct slugs
+// ("kota-bandung" vs "kab-bandung"). Other adminstrative prefixes pass
+// through unchanged.
 func slugify(s string) string {
-	s = strings.ToLower(s)
-	// Strip "Kabupaten "/"Kota " prefix so URLs are clean.
-	s = strings.TrimPrefix(s, "kabupaten ")
-	s = strings.TrimPrefix(s, "kota ")
+	s = strings.ToLower(strings.TrimSpace(s))
+	prefix := ""
+	switch {
+	case strings.HasPrefix(s, "kabupaten "):
+		prefix = "kab-"
+		s = strings.TrimPrefix(s, "kabupaten ")
+	case strings.HasPrefix(s, "kota "):
+		prefix = "kota-"
+		s = strings.TrimPrefix(s, "kota ")
+	}
 	s = slugRe.ReplaceAllString(s, "-")
-	return strings.Trim(s, "-")
+	return strings.Trim(prefix+s, "-")
 }
