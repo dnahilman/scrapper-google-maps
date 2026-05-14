@@ -36,8 +36,18 @@ func Search(ctx context.Context, page playwright.Page, keyword, kelurahan, kecam
 		return nil, err
 	}
 
+	// Google auto-redirects exact-match queries (e.g. specific business names)
+	// straight to the place detail panel — no result list. Detect this first.
+	if final := page.URL(); strings.Contains(final, "/maps/place/") {
+		return []string{final}, nil
+	}
+
 	if err := waitForAny(page, SelFeedOrCard, 20000); err != nil {
-		// No results.
+		// One more chance after the soft wait — Google sometimes finishes the
+		// redirect after a brief loading delay.
+		if final := page.URL(); strings.Contains(final, "/maps/place/") {
+			return []string{final}, nil
+		}
 		return nil, nil
 	}
 
