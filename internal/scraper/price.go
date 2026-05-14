@@ -4,30 +4,29 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
-// priceLevelJS pulls a price indicator either from an aria-label containing
-// "harga/price" or from a regex against the main panel ("$$$" / "Rp 50.000-100.000").
-// Mirrors server/src/gmaps.py::_scrape_price_level.
-const priceLevelJS = `() => {
+// priceJS returns the raw price indicator as Google rendered it — no regex,
+// no normalization beyond whitespace collapsing. Looks for any span whose
+// aria-label mentions "harga" or "price" and returns the aria-label itself
+// (most informative) falling back to inner text. Returns null when absent.
+const priceJS = `() => {
   const norm = s => (s || '').replace(/\s+/g, ' ').trim();
-  const candidates = document.querySelectorAll('span[aria-label]');
+  const candidates = document.querySelectorAll('span[aria-label], div[aria-label], button[aria-label]');
   for (const el of candidates) {
-    const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-    if (aria.includes('harga') || aria.includes('price')) {
-      const txt = norm(el.innerText) || el.getAttribute('aria-label');
-      if (txt) return norm(txt);
+    const aria = (el.getAttribute('aria-label') || '');
+    const ariaLow = aria.toLowerCase();
+    if (ariaLow.includes('harga') || ariaLow.includes('price')) {
+      return norm(aria) || norm(el.innerText);
     }
   }
-  const main = document.querySelector('div[role="main"]') || document.body;
-  const headerText = main.innerText || '';
-  const m = headerText.match(/\$+|Rp\s*[\d.]+(?:[-–]\s*Rp?\s*[\d.]+)?/);
-  if (m) return m[0].trim();
   return null;
 }`
 
-// ScrapePriceRange returns the place's price indicator ("Rp 25.000-50.000",
-// "$$", "$$$") or "" when not detectable.
-func ScrapePriceRange(page playwright.Page) string {
-	v, err := page.Evaluate(priceLevelJS)
+// ScrapePrice returns the place's price indicator exactly as Google rendered
+// it (e.g. "Rp 25.000–50.000", "Price: $$", "Harga: Rp10.000–25.000"), or ""
+// when not detectable. No transformation is applied — consumers can parse as
+// needed.
+func ScrapePrice(page playwright.Page) string {
+	v, err := page.Evaluate(priceJS)
 	if err != nil || v == nil {
 		return ""
 	}

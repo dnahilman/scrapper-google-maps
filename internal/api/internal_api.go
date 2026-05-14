@@ -267,7 +267,7 @@ func payloadToPlace(req *SubmitPlacesRequest, p *domain.PlacePayload) *domain.Pl
 		ReviewsLink:      p.ReviewsLink,
 		Thumbnail:        p.Thumbnail,
 		Timezone:         p.Timezone,
-		PriceRange:       p.PriceRange,
+		Price:            p.Price,
 		Images:           domain.JSONB(imagesJSON),
 		Reservations:     domain.JSONB(resJSON),
 		OrderOnline:      domain.JSONB(ooJSON),

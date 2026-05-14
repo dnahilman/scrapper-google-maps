@@ -83,7 +83,7 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 	p.Status = scrapeStatus(page)
 
 	// Small metadata scrapes that live on the default panel.
-	p.PriceRange = ScrapePriceRange(page)
+	p.Price = ScrapePrice(page)
 	p.Description = ScrapeDescription(page)
 	p.ReviewsLink = ReviewsLink(page, target)
 	p.Timezone = TimezoneForCity(opts.CityName)
@@ -119,7 +119,7 @@ func ScrapePlace(ctx context.Context, page playwright.Page, rawURL string, minDe
 			SkipEmpty:    opts.SkipEmptyReviews,
 		})
 		p.UserReviews = reviews
-		if dist := ScrapeReviewsPerRating(page); len(dist) > 0 {
+		if dist := ScrapeReviewsPerRating(ctx, page); len(dist) > 0 {
 			p.ReviewsPerRating = dist
 		}
 	}

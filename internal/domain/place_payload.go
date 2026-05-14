@@ -100,7 +100,7 @@ type PlacePayload struct {
 	ReviewsLink      string                 `json:"reviews_link,omitempty"`
 	Thumbnail        string                 `json:"thumbnail,omitempty"`
 	Timezone         string                 `json:"timezone,omitempty"`
-	PriceRange       string                 `json:"price_range,omitempty"`
+	Price            string                 `json:"price,omitempty"`
 	DataID           string                 `json:"data_id,omitempty"`
 	PlaceID          string                 `json:"place_id"`
 	Images           []Image                `json:"images,omitempty"`

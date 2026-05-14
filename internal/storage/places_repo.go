@@ -26,7 +26,7 @@ func (r *PlacesRepo) Upsert(ctx context.Context, p *domain.Place) error {
 			"website", "phone", "plus_code",
 			"review_count", "review_rating", "reviews_per_rating",
 			"latitude", "longitude",
-			"status", "description", "reviews_link", "thumbnail", "timezone", "price_range",
+			"status", "description", "reviews_link", "thumbnail", "timezone", "price",
 			"images", "reservations", "order_online", "menu", "owner", "about", "emails",
 			"scraped_at",
 		}),

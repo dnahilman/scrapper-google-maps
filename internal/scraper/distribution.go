@@ -1,6 +1,9 @@
 package scraper
 
 import (
+	"context"
+	"time"
+
 	"github.com/playwright-community/playwright-go"
 )
 
@@ -32,7 +35,29 @@ const reviewDistributionJS = `() => {
 
 // ScrapeReviewsPerRating returns a map[1..5]int suitable for PlacePayload.ReviewsPerRating.
 // Assumes the Reviews tab has been opened so the histogram aria-labels are present.
-func ScrapeReviewsPerRating(page playwright.Page) map[int]int {
+// Polls briefly because the histogram aria-labels render asynchronously after
+// the tab click — single-shot evaluate often misses them.
+func ScrapeReviewsPerRating(ctx context.Context, page playwright.Page) map[int]int {
+	deadline := time.Now().Add(4 * time.Second)
+	var last map[int]int
+	for {
+		out := evalReviewDistribution(page)
+		if len(out) > 0 {
+			return out
+		}
+		last = out
+		if time.Now().After(deadline) || ctx.Err() != nil {
+			return last
+		}
+		select {
+		case <-ctx.Done():
+			return last
+		case <-time.After(500 * time.Millisecond):
+		}
+	}
+}
+
+func evalReviewDistribution(page playwright.Page) map[int]int {
 	v, err := page.Evaluate(reviewDistributionJS)
 	if err != nil || v == nil {
 		return nil

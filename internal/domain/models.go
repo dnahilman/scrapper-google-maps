@@ -173,7 +173,7 @@ type Place struct {
 	ReviewsLink string `gorm:"column:reviews_link"            json:"reviews_link,omitempty"`
 	Thumbnail   string `gorm:"column:thumbnail"               json:"thumbnail,omitempty"`
 	Timezone    string `gorm:"column:timezone"                json:"timezone,omitempty"`
-	PriceRange  string `gorm:"column:price_range"             json:"price_range,omitempty"`
+	Price       string `gorm:"column:price"                   json:"price,omitempty"`
 
 	Images       JSONB       `gorm:"column:images;type:jsonb;default:'[]'"       json:"images,omitempty"`
 	Reservations JSONB       `gorm:"column:reservations;type:jsonb;default:'[]'" json:"reservations,omitempty"`
