@@ -1,19 +1,20 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { api, fmtUptime, type HealthResponse } from '../lib/api.ts';
+  import { fmtUptime } from '../lib/api.ts';
+  import { v1, type HealthV1 } from '../lib/api_v1.ts';
   import { section } from '../lib/stores.ts';
 
   let healthState: 'healthy' | 'down' | 'checking' = 'checking';
   let lastLatency: number | null = null;
   let lastCheck: Date | null = null;
-  let info: HealthResponse | null = null;
+  let info: HealthV1 | null = null;
   let timer: ReturnType<typeof setInterval>;
 
   async function check(): Promise<void> {
     const t0 = performance.now();
     try {
-      info = await api.health();
-      healthState = info.ok ? 'healthy' : 'down';
+      info = await v1.health();
+      healthState = info.status === 'ok' && info.db === 'ok' ? 'healthy' : 'down';
     } catch {
       healthState = 'down';
       info = null;
@@ -31,14 +32,14 @@
 
   $: tooltip =
     info != null
-      ? `version ${info.version} · uptime ${fmtUptime(info.uptime_sec)} · ${lastLatency} ms · checked ${
+      ? `uptime ${fmtUptime(info.uptime_seconds)} · db ${info.db} · workers ${info.workers_online}/${info.workers_total} · ${lastLatency} ms · checked ${
           lastCheck?.toLocaleTimeString('id-ID', { hour12: false }) ?? '-'
         }`
       : 'API tidak merespons';
 
   $: label =
     healthState === 'healthy'
-      ? 'healthy'
+      ? `${info?.workers_online ?? 0}/${info?.workers_total ?? 0} workers`
       : healthState === 'down'
         ? 'down'
         : 'checking…';

@@ -5,6 +5,7 @@
   import ProgressDashboard from './components/ProgressDashboard.svelte';
   import JobsPageV2 from './components/JobsPageV2.svelte';
   import WorkerBoard from './components/WorkerBoard.svelte';
+  import PlacesBrowser from './components/PlacesBrowser.svelte';
   import FileBrowser from './components/FileBrowser.svelte';
   import LogsPage from './components/LogsPage.svelte';
   import { section, toasts } from './lib/stores.ts';
@@ -37,6 +38,8 @@
         <JobsPageV2 />
       {:else if $section === 'workers'}
         <WorkerBoard />
+      {:else if $section === 'places'}
+        <PlacesBrowser />
       {:else if $section === 'files'}
         <FileBrowser />
       {:else if $section === 'logs'}
