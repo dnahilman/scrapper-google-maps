@@ -21,11 +21,81 @@ type ReviewsOptions struct {
 // reviewCardJS extracts every fielded payload from a single [data-review-id]
 // card via Element.evaluate. Returns an object matching `reviewCardJSResult`.
 const reviewCardJS = `el => {
-  const txt = (sel) => el.querySelector(sel)?.innerText?.trim() || null;
   const attr = (sel, a) => el.querySelector(sel)?.getAttribute(a) || null;
   const isAvatar = url => /googleusercontent\.com\/a[-]?\//.test(url);
+
+  // ----- 1. Owner response: locate first so we can EXCLUDE it from the
+  //          customer review text search below. -----
+  const ownerRoot = el.querySelector(
+    'div.CDe7pd, [class*="CDe7pd"], div.cwsRgf, [class*="cwsRgf"], ' +
+    'div[data-google-review-response]'
+  );
+  const ownerResponse = ownerRoot ? (ownerRoot.innerText || '').trim() || null : null;
+
+  // ----- 2. Author + rating + time.
+  //         Reviewer name lives in one of three spots depending on the UI
+  //         version; we try them in order and skip anything inside the owner
+  //         response container so we don't return the owner's name by mistake. -----
+  const isInsideOwnerResp = (node) =>
+    ownerRoot && (node === ownerRoot || ownerRoot.contains(node));
+
+  let author = null;
+  const authorCandidates = [
+    'div.d4r55',
+    '[class*="d4r55"]',
+    'button[jsaction*="reviewerLink"]',
+    'a[href*="/maps/contrib/"]',
+  ];
+  for (const sel of authorCandidates) {
+    for (const node of el.querySelectorAll(sel)) {
+      if (isInsideOwnerResp(node)) continue;
+      const text = (node.innerText || node.getAttribute('aria-label') || '').trim();
+      if (text && !text.toLowerCase().startsWith('foto pengulas')) {
+        author = text;
+        break;
+      }
+    }
+    if (author) break;
+  }
+  const authorAvatar = attr('button[jsaction*="reviewerLink"] img', 'src');
+  const ratingAria = attr('span[role="img"][aria-label*="bintang" i]', 'aria-label')
+                  || attr('span[role="img"][aria-label*="star" i]', 'aria-label');
+  const time = (el.querySelector('span.rsqaWe, [class*="rsqaWe"]')
+    ?.innerText || '').trim() || null;
+
+  // ----- 3. Customer review text: prefer span.wiI7pd that is NOT inside the
+  //          owner response subtree. -----
+  let text = null;
+  for (const cand of el.querySelectorAll('span.wiI7pd, [class*="wiI7pd"]')) {
+    if (isInsideOwnerResp(cand)) continue;
+    const t = (cand.innerText || '').trim();
+    if (t) { text = t; break; }
+  }
+
+  // ----- 4. Last-resort heuristic: drop descriptions that clearly look like an
+  //          owner reply that leaked through despite our exclusion (Google
+  //          occasionally reuses the wiI7pd class for the response itself when
+  //          the customer wrote no text). -----
+  if (text) {
+    const lc = text.toLowerCase().trim();
+    const ownerLeads = [
+      'halo kak', 'halo,', 'halo bro', 'halo sis', 'halo bapak', 'halo ibu',
+      'terima kasih atas ulasan', 'terima kasih atas review',
+      'terima kasih telah memberi ulasan', 'terima kasih telah memberikan ulasan',
+      'tanggapan dari pemilik',
+      'hi there', 'hello,', 'thank you for your review',
+      'thanks for your review', 'thanks for your kind',
+      'response from the owner'
+    ];
+    if (ownerLeads.some(p => lc.startsWith(p))) {
+      text = null;
+    }
+  }
+
+  // ----- 5. Review photos (skip avatars + tiny thumbnails). -----
   const photos = new Set();
   el.querySelectorAll('button[style*="background-image"], div[style*="background-image"]').forEach(b => {
+    if (isInsideOwnerResp(b)) return;
     const style = b.getAttribute('style') || '';
     const m = style.match(/url\("?(https:\/\/[^")]+googleusercontent[^")]+)"?\)/);
     if (m) {
@@ -37,6 +107,7 @@ const reviewCardJS = `el => {
     }
   });
   el.querySelectorAll('img').forEach(img => {
+    if (isInsideOwnerResp(img)) return;
     const src = img.src || img.dataset?.src || '';
     if (!src.includes('googleusercontent.com')) return;
     if (isAvatar(src)) return;
@@ -46,15 +117,15 @@ const reviewCardJS = `el => {
     if (eqIdx > -1) base = src.substring(0, eqIdx);
     photos.add(base + '=w800-h600-k-no');
   });
+
   return {
     review_id: el.getAttribute('data-review-id'),
-    author: txt('div.d4r55') || txt('[class*="d4r55"]') || txt('button[jsaction*="reviewerLink"]'),
-    author_avatar: attr('button[jsaction*="reviewerLink"] img', 'src'),
-    rating_aria: attr('span[role="img"][aria-label*="bintang" i]', 'aria-label')
-              || attr('span[role="img"][aria-label*="star" i]', 'aria-label'),
-    text: txt('span.wiI7pd') || txt('[class*="wiI7pd"]'),
-    time: txt('span.rsqaWe') || txt('[class*="rsqaWe"]'),
-    owner_response: txt('div.CDe7pd') || txt('[class*="CDe7pd"]'),
+    author,
+    author_avatar: authorAvatar,
+    rating_aria: ratingAria,
+    text,
+    time,
+    owner_response: ownerResponse,
     review_photos: Array.from(photos),
   };
 }`

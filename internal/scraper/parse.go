@@ -156,19 +156,34 @@ func ExtractCoords(url string) (lat, lng float64, ok bool) {
 	return 0, 0, false
 }
 
-// ParseAgeDays converts "X tahun lalu" / "X years ago" / "kemarin" / "yesterday"
-// into approximate age in days. Returns -1 on parse failure.
+// ParseAgeDays converts Google Maps relative time strings into approximate
+// age in days. Handles Indonesian + English forms, including the no-number
+// "seminggu lalu" / "a week ago" / "sebulan lalu" / "setahun lalu" variants.
+// Returns -1 when nothing matches.
 func ParseAgeDays(timeStr string) int {
 	if timeStr == "" {
 		return -1
 	}
 	s := strings.ToLower(strings.TrimSpace(timeStr))
 	s = reEditedPrefix.ReplaceAllString(s, "")
+	if strings.Contains(s, "baru saja") || strings.Contains(s, "just now") ||
+		strings.Contains(s, "hari ini") || strings.Contains(s, "today") {
+		return 0
+	}
 	if strings.Contains(s, "kemarin") || strings.Contains(s, "yesterday") {
 		return 1
 	}
-	if strings.Contains(s, "baru saja") || strings.Contains(s, "just now") {
-		return 0
+	// No-number variants ("seminggu lalu" = "a week ago" = implicit n=1).
+	for k, v := range map[string]int{
+		"setahun": 365, "a year": 365, "one year": 365,
+		"sebulan": 30, "a month": 30, "one month": 30,
+		"seminggu": 7, "a week": 7, "one week": 7,
+		"sehari": 1, "a day": 1, "one day": 1,
+		"sejam": 1, "an hour": 1, "one hour": 1,
+	} {
+		if strings.Contains(s, k) {
+			return v
+		}
 	}
 	digits := strings.Builder{}
 	for _, r := range s {
