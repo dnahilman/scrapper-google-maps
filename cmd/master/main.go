@@ -13,6 +13,7 @@ import (
 	"github.com/dnahilman/scrapper-go/internal/config"
 	"github.com/dnahilman/scrapper-go/internal/emsifa"
 	"github.com/dnahilman/scrapper-go/internal/logger"
+	"github.com/dnahilman/scrapper-go/internal/logstream"
 	"github.com/dnahilman/scrapper-go/internal/queue"
 	"github.com/dnahilman/scrapper-go/internal/storage"
 	"github.com/dnahilman/scrapper-go/internal/version"
@@ -78,8 +79,9 @@ func run(cfg *config.MasterConfig) {
 	q := queue.NewPostgresQueue(db, tasksRepo, jobsRepo)
 	em := emsifa.New(cfg.EmsifaBaseURL)
 	seeder := emsifa.NewSeeder(em, citiesRepo, kelRepo)
+	hub := logstream.NewHub()
 
-	reaper := queue.NewReaper(db, workersRepo,
+	reaper := queue.NewReaper(db, workersRepo, hub,
 		time.Duration(cfg.ReaperInterval)*time.Second,
 		time.Duration(cfg.DeadAfter)*time.Minute)
 	go reaper.Run(ctx)
@@ -98,6 +100,7 @@ func run(cfg *config.MasterConfig) {
 		Queue:     q,
 		Emsifa:    em,
 		Seeder:    seeder,
+		Hub:       hub,
 	}
 	r := api.NewRouter(deps)
 

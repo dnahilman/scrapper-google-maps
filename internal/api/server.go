@@ -7,6 +7,7 @@ import (
 
 	"github.com/dnahilman/scrapper-go/internal/config"
 	"github.com/dnahilman/scrapper-go/internal/emsifa"
+	"github.com/dnahilman/scrapper-go/internal/logstream"
 	"github.com/dnahilman/scrapper-go/internal/queue"
 	"github.com/dnahilman/scrapper-go/internal/storage"
 )
@@ -26,6 +27,7 @@ type Deps struct {
 	Queue     *queue.PostgresQueue
 	Emsifa    *emsifa.Client
 	Seeder    *emsifa.Seeder
+	Hub       *logstream.Hub
 }
 
 // NewRouter wires up all routes.
@@ -57,6 +59,11 @@ func NewRouter(d *Deps) *gin.Engine {
 
 	internal := r.Group("/api/v1/internal", masterTokenAuth(d.Cfg.MasterToken))
 	registerInternalRoutes(internal, d)
+
+	// WebSocket — same-origin only via CORS / no auth (clients are first-party).
+	if d.Hub != nil {
+		registerWSRoute(r, d.Hub)
+	}
 
 	// Static frontend (Svelte build)
 	r.Static("/assets", "./web/dist/assets")

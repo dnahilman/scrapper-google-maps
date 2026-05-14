@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/dnahilman/scrapper-go/internal/domain"
+	"github.com/dnahilman/scrapper-go/internal/logstream"
 )
 
 func registerInternalRoutes(g *gin.RouterGroup, d *Deps) {
@@ -54,6 +55,14 @@ func workerRegister(d *Deps) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		if d.Hub != nil {
+			d.Hub.Broadcast(logstream.EventWorkerRegistered, gin.H{
+				"id":              w.ID,
+				"name":            w.Name,
+				"ip_addr":         w.IPAddr,
+				"max_concurrency": w.MaxConcurrency,
+			})
+		}
 		c.JSON(http.StatusOK, w)
 	}
 }
@@ -93,6 +102,17 @@ func taskClaim(d *Deps) gin.HandlerFunc {
 			c.JSON(http.StatusNoContent, nil)
 			return
 		}
+		if d.Hub != nil {
+			d.Hub.Broadcast(logstream.EventTaskClaimed, gin.H{
+				"task_id":        ct.TaskID,
+				"job_id":         ct.JobID,
+				"worker_id":      req.WorkerID,
+				"keyword":        ct.Keyword,
+				"kelurahan_name": ct.KelurahanName,
+				"kecamatan_name": ct.KecamatanName,
+				"attempt":        ct.Attempt,
+			})
+		}
 		c.JSON(http.StatusOK, ct)
 	}
 }
@@ -130,6 +150,12 @@ func taskAck(d *Deps) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		if d.Hub != nil {
+			d.Hub.Broadcast(logstream.EventTaskCompleted, gin.H{
+				"task_id":      id,
+				"places_count": req.PlacesCount,
+			})
+		}
 		c.Status(http.StatusNoContent)
 	}
 }
@@ -150,6 +176,12 @@ func taskNack(d *Deps) gin.HandlerFunc {
 		if err := d.Queue.Nack(c.Request.Context(), id, req.Error); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
+		}
+		if d.Hub != nil {
+			d.Hub.Broadcast(logstream.EventTaskFailed, gin.H{
+				"task_id": id,
+				"error":   req.Error,
+			})
 		}
 		c.Status(http.StatusNoContent)
 	}

@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-export type Section = 'dashboard' | 'jobs' | 'files' | 'logs';
+export type Section = 'dashboard' | 'jobs' | 'workers' | 'files' | 'logs';
 export type ToastKind = 'info' | 'success' | 'error' | 'warn';
 
 export interface Toast {
@@ -9,7 +9,7 @@ export interface Toast {
   kind: ToastKind;
 }
 
-const VALID_SECTIONS: Section[] = ['dashboard', 'jobs', 'files', 'logs'];
+const VALID_SECTIONS: Section[] = ['dashboard', 'jobs', 'workers', 'files', 'logs'];
 
 // Active section di sidebar. Sync ke hash supaya bookmarkable.
 // Format hash: #dashboard, #jobs, #files, #logs (tanpa slash)

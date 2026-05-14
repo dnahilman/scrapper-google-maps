@@ -10,6 +10,7 @@
   const items: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '◐' },
     { id: 'jobs',      label: 'Jobs',      icon: '▶' },
+    { id: 'workers',   label: 'Workers',   icon: '◉' },
     { id: 'files',     label: 'Files',     icon: '◫' },
     { id: 'logs',      label: 'Logs',      icon: '≡' },
   ];
