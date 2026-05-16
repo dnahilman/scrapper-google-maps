@@ -1,21 +1,18 @@
-name: Build & Push Image
+name: Build & Push Images
 
-# Build + push image ke GHCR — TIDAK deploy ke VPS.
 # Triggers:
-#   - tag `v*`           → image tags semver: 1.5.0, 1.5, 1, latest
-#   - workflow_dispatch  → manual build (bisa pilih branch apa saja, tag custom)
-#
-# Push ke branch mana pun TIDAK trigger build — build hanya via tag release
-# atau workflow_dispatch manual.
+#   - push ke feat/go-rewrite atau main → tag branch + latest
+#   - tag `v*`                          → semver tags + latest
+#   - workflow_dispatch                 → manual, bisa pilih branch
 
 on:
   push:
+    branches: ['feat/go-rewrite', 'main']
     tags: ['v*']
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -23,6 +20,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,25 +35,50 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
+      - name: Extract metadata (master)
+        id: meta-master
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/scrapper-master
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest
             type=sha,prefix=sha-
 
-      - name: Build and push
+      - name: Build and push master
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: deploy/master.Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-master.outputs.tags }}
+          labels: ${{ steps.meta-master.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract metadata (worker)
+        id: meta-worker
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/scrapper-worker
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Build and push worker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/worker.Dockerfile
+          push: true
+          tags: ${{ steps.meta-worker.outputs.tags }}
+          labels: ${{ steps.meta-worker.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

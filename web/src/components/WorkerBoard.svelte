@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { v1, type Worker, fmtTimeAgo } from '../lib/api_v1.ts';
   import { notify } from '../lib/stores.ts';
+  import { ws } from '../lib/ws.ts';
 
-  let workers: Worker[] = [];
-  let loading = true;
-  let error = '';
-  let timer: ReturnType<typeof setInterval> | null = null;
+  let workers: Worker[] = $state([]);
+  let loading = $state(true);
+  let error = $state('');
 
   async function refresh(): Promise<void> {
     try {
@@ -42,18 +42,20 @@
 
   onMount(() => {
     void refresh();
-    timer = setInterval(() => void refresh(), 5_000);
-  });
-
-  onDestroy(() => {
-    if (timer) clearInterval(timer);
+    const unsub = ws.events.subscribe((e) => {
+      if (!e) return;
+      if (['worker.registered', 'worker.offline'].includes(e.type)) {
+        void refresh();
+      }
+    });
+    return () => unsub();
   });
 </script>
 
 <section class="worker-board">
   <header>
     <h3>Workers</h3>
-    <span class="muted">{workers.length} terdaftar · auto-refresh 5s</span>
+    <span class="muted">{workers.length} terdaftar · live (WS)</span>
   </header>
 
   {#if loading}
@@ -79,9 +81,9 @@
           </dl>
           <footer>
             {#if w.status === 'online'}
-              <button type="button" class="ghost icon-btn" on:click={() => drain(w.id)}>Drain</button>
+              <button type="button" class="ghost icon-btn" onclick={() => drain(w.id)}>Drain</button>
             {/if}
-            <button type="button" class="ghost icon-btn danger" on:click={() => remove(w.id)}>Remove</button>
+            <button type="button" class="ghost icon-btn danger" onclick={() => remove(w.id)}>Remove</button>
           </footer>
         </article>
       {/each}
@@ -90,77 +92,20 @@
 </section>
 
 <style>
-  .worker-board {
-    display: grid;
-    gap: 0.75rem;
-  }
-  .worker-board > header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  .worker-board > header h3 {
-    margin: 0;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.75rem;
-  }
-  .card {
-    border: 1px solid var(--pico-form-element-border-color, #2a2c33);
-    border-radius: 8px;
-    padding: 0.85rem;
-    margin: 0;
-    display: grid;
-    gap: 0.5rem;
-  }
-  .card.status-online {
-    border-left: 3px solid #2ecc71;
-  }
-  .card.status-offline {
-    border-left: 3px solid #95a5a6;
-    opacity: 0.7;
-  }
-  .card.status-draining {
-    border-left: 3px solid #f39c12;
-  }
-  .card header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-  .badge {
-    font-size: 0.75em;
-    text-transform: uppercase;
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    background: var(--pico-secondary-background, rgba(255, 255, 255, 0.06));
-  }
-  dl {
-    margin: 0;
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 0.15rem 0.6rem;
-    font-size: 0.85em;
-  }
-  dt {
-    color: var(--pico-muted-color, #888);
-  }
-  dd {
-    margin: 0;
-  }
-  footer {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-  }
-  .danger {
-    color: var(--pico-color-red-550, #c0392b);
-  }
-  .error {
-    color: var(--pico-color-red-550, #c0392b);
-  }
+  .worker-board { display: grid; gap: 0.75rem; }
+  .worker-board > header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .worker-board > header h3 { margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
+  .card { border: 1px solid var(--pico-form-element-border-color, #2a2c33); border-radius: 8px; padding: 0.85rem; margin: 0; display: grid; gap: 0.5rem; }
+  .card.status-online  { border-left: 3px solid #2ecc71; }
+  .card.status-offline { border-left: 3px solid #95a5a6; opacity: 0.7; }
+  .card.status-draining { border-left: 3px solid #f39c12; }
+  .card header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .badge { font-size: 0.75em; text-transform: uppercase; padding: 0.15rem 0.5rem; border-radius: 999px; background: var(--pico-secondary-background, rgba(255,255,255,.06)); }
+  dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.6rem; font-size: 0.85em; }
+  dt { color: var(--pico-muted-color, #888); }
+  dd { margin: 0; }
+  footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  .danger { color: var(--pico-color-red-550, #c0392b); }
+  .error { color: var(--pico-color-red-550, #c0392b); }
 </style>

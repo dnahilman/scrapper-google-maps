@@ -35,9 +35,3 @@ dead_after_min = 2
 
 [emsifa]
 base_url = "https://emsifa.github.io/api-wilayah-indonesia/api"
-
-[sync]
-enabled = true
-url = ""
-api_key = ""
-retry_max = 5

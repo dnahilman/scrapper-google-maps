@@ -1,23 +1,21 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { v1, fmtTimeAgo } from '../lib/api_v1.ts';
 
-  export let placeId: string;
-  export let onClose: () => void;
+  interface Props {
+    placeId: string;
+    onClose: () => void;
+  }
+  let { placeId, onClose }: Props = $props();
 
-  // Place + reviews loaded by ID. Full payload pulled from /api/v1/places/:id.
-  let place: any = null;
-  let reviews: any[] = [];
-  let loading = true;
-  let error = '';
+  let place: any = $state(null);
+  let reviews: any[] = $state([]);
+  let loading = $state(true);
+  let error = $state('');
 
   async function load(): Promise<void> {
+    loading = true;
+    error = '';
     try {
-      const [p, r] = await Promise.all([
-        v1.list ? null : null, // placeholder
-        null,
-      ]);
-      // Use raw fetch since v1 doesn't have a typed wrapper for these yet.
       const pRes = await fetch(`/api/v1/places/${encodeURIComponent(placeId)}`);
       if (!pRes.ok) throw new Error(`${pRes.status} ${pRes.statusText}`);
       place = await pRes.json();
@@ -30,7 +28,9 @@
     }
   }
 
-  onMount(load);
+  $effect(() => {
+    void load();
+  });
 
   function fmtLatLng(p: any): string {
     if (!p?.latitude || !p?.longitude) return '–';
@@ -45,7 +45,7 @@
         <strong>{place?.title ?? '…'}</strong>
         {#if place?.category}<div class="muted small">{place.category}</div>{/if}
       </div>
-      <button class="ghost icon-btn" type="button" on:click={onClose}>✕</button>
+      <button class="ghost icon-btn" type="button" onclick={onClose}>✕</button>
     </header>
 
     {#if loading}

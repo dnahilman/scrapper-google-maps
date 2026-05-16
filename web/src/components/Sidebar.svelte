@@ -1,24 +1,13 @@
 <script lang="ts">
-  import { section, activeJobsCount, type Section } from '../lib/stores.ts';
+  import { route, activeJobsCount, navigate, type Section } from '../lib/stores.ts';
 
-  interface NavItem {
-    id: Section;
-    label: string;
-    icon: string;
-  }
-
-  const items: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: '◐' },
-    { id: 'jobs',      label: 'Jobs',      icon: '▶' },
-    { id: 'workers',   label: 'Workers',   icon: '◉' },
-    { id: 'places',    label: 'Places',    icon: '◆' },
-    { id: 'files',     label: 'Files',     icon: '◫' },
-    { id: 'logs',      label: 'Logs',      icon: '≡' },
+  const items = [
+    { id: 'dashboard' as Section, label: 'Dashboard', icon: '◐' },
+    { id: 'jobs'      as Section, label: 'Jobs',      icon: '▶' },
+    { id: 'workers'   as Section, label: 'Workers',   icon: '◉' },
+    { id: 'places'    as Section, label: 'Places',    icon: '◆' },
+    { id: 'logs'      as Section, label: 'Logs',      icon: '≡' },
   ];
-
-  function go(id: Section): void {
-    section.set(id);
-  }
 </script>
 
 <aside class="app-sidebar">
@@ -29,15 +18,14 @@
 
   <nav>
     {#each items as it}
-      <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div
         class="nav-item"
-        class:active={$section === it.id}
-        on:click={() => go(it.id)}
-        on:keydown={(e) => e.key === 'Enter' && go(it.id)}
+        class:active={$route.section === it.id}
+        onclick={() => navigate(`#${it.id}`)}
+        onkeydown={(e) => e.key === 'Enter' && navigate(`#${it.id}`)}
         tabindex="0"
         role="button"
-        aria-current={$section === it.id ? 'page' : undefined}
+        aria-current={$route.section === it.id ? 'page' : undefined}
       >
         <span><span class="nav-icon">{it.icon}</span>{it.label}</span>
         {#if it.id === 'jobs' && $activeJobsCount > 0}

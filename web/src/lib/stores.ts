@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-export type Section = 'dashboard' | 'jobs' | 'workers' | 'places' | 'files' | 'logs';
+export type Section = 'dashboard' | 'jobs' | 'workers' | 'places' | 'logs';
 export type ToastKind = 'info' | 'success' | 'error' | 'warn';
 
 export interface Toast {
@@ -9,29 +9,72 @@ export interface Toast {
   kind: ToastKind;
 }
 
-const VALID_SECTIONS: Section[] = ['dashboard', 'jobs', 'workers', 'places', 'files', 'logs'];
-
-// Active section di sidebar. Sync ke hash supaya bookmarkable.
-// Format hash: #dashboard, #jobs, #files, #logs (tanpa slash)
-function readHash(): Section {
-  const h = (window.location.hash || '#dashboard').replace(/^#/, '');
-  const seg = h.split('/')[0] as Section;
-  if (VALID_SECTIONS.includes(seg)) return seg;
-  return 'dashboard';
+export interface Route {
+  section: Section;
+  sub?: string;
+  params: Record<string, string>;
 }
 
-export const section = writable<Section>(readHash());
+const VALID_SECTIONS: Section[] = ['dashboard', 'jobs', 'workers', 'places', 'logs'];
 
-section.subscribe((s) => {
-  const target = `#${s}`;
+function parseHash(raw: string): Route {
+  // Format: #section/sub?key=val&key2=val2  or  #section?key=val
+  const withoutHash = (raw || '#dashboard').replace(/^#/, '');
+  const [pathPart, queryPart] = withoutHash.split('?');
+  const segments = pathPart.split('/');
+  const sectionRaw = segments[0] as Section;
+  const section: Section = VALID_SECTIONS.includes(sectionRaw) ? sectionRaw : 'dashboard';
+  const sub = segments[1] || undefined;
+
+  const params: Record<string, string> = {};
+  if (queryPart) {
+    for (const kv of queryPart.split('&')) {
+      const [k, v] = kv.split('=');
+      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v ?? '');
+    }
+  }
+  return { section, sub, params };
+}
+
+function routeToHash(r: Route): string {
+  let h = `#${r.section}`;
+  if (r.sub) h += `/${r.sub}`;
+  const keys = Object.keys(r.params ?? {});
+  if (keys.length) {
+    h += '?' + keys.map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(r.params[k])}`).join('&');
+  }
+  return h;
+}
+
+function readRoute(): Route {
+  return parseHash(window.location.hash);
+}
+
+export const route = writable<Route>(readRoute());
+
+// Keep the hash in sync with the store
+route.subscribe((r) => {
+  const target = routeToHash(r);
   if (window.location.hash !== target) {
     window.history.replaceState(null, '', target);
   }
 });
 
 window.addEventListener('hashchange', () => {
-  section.set(readHash());
+  route.set(readRoute());
 });
+
+// Convenience: set the active section (clears sub/params)
+export function navigate(hash: string): void {
+  window.location.hash = hash;
+  route.set(parseHash(hash));
+}
+
+// Legacy alias so Sidebar and other components don't break during refactor
+export const section = {
+  subscribe: (run: (s: Section) => void) => route.subscribe((r) => run(r.section)),
+  set: (s: Section) => route.update((r) => ({ ...r, section: s, sub: undefined, params: {} })),
+};
 
 // Toast / notif sederhana
 export const toasts = writable<Toast[]>([]);

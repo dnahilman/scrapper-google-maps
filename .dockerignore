@@ -3,24 +3,15 @@
 .github
 .gitignore
 
-# Python
-.venv
-venv
-__pycache__
-*.pyc
-*.pyo
-*.egg-info
-
-# Env / secrets — JANGAN masuk image
+# Env / secrets
 .env
 .env.local
 .env.example
 .env.*
 
-# Local runtime data — akan di-mount sebagai volume
+# Local runtime data — volume-mounted
 data
 logs
-progress.db
 *.db
 *.db-journal
 
@@ -32,22 +23,19 @@ progress.db
 .idea
 .vscode
 
-# Docs (tidak perlu di image)
+# Docs
 README.md
 *.md
 
 # Claude / agent metadata
 .claude
 
-# Plan files
-plans
-
-# Frontend build artifacts (di-build di multi-stage, tidak ikut context)
+# Frontend build artifacts (built in multi-stage)
 web/node_modules
 web/dist
 web/.svelte-kit
 web/.vite
 
-# Tests (kalau ada)
+# Tests
 tests
 test

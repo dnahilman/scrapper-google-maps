@@ -136,6 +136,65 @@ export interface CreateJobBody {
   max_attempts?: number;
 }
 
+export interface PlacesPage {
+  items: Place[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export interface Review {
+  id: string;
+  place_id: string;
+  review_id?: string;
+  name?: string;
+  profile_picture?: string;
+  rating?: number;
+  description?: string;
+  images?: string[];
+  when?: string;
+  age_days?: number;
+  owner_response?: unknown;
+  extended: boolean;
+  created_at: string;
+}
+
+export interface Place {
+  id: string;
+  place_id: string;
+  title: string;
+  category?: string;
+  categories?: string[];
+  address?: string;
+  phone?: string;
+  website?: string;
+  review_rating?: number;
+  review_count?: number;
+  reviews_per_rating?: unknown;
+  reviews_link?: string;
+  latitude?: number;
+  longitude?: number;
+  price?: string;
+  status?: string;
+  emails?: string[];
+  description?: string;
+  keyword: string;
+  plus_code?: string;
+  timezone?: string;
+  thumbnail?: string;
+  cid?: string;
+  scraped_at: string;
+  complete_address?: unknown;
+  open_hours?: unknown;
+  popular_times?: unknown;
+  images?: unknown;
+  menu?: unknown;
+  about?: unknown;
+  owner?: unknown;
+  reservations?: unknown;
+  order_online?: unknown;
+}
+
 // ---------- API surface ----------
 
 export const v1 = {
@@ -174,6 +233,16 @@ export const v1 = {
     req(`/jobs/${encodeURIComponent(id)}/cancel`, { method: 'POST' }),
   retryFailed: (id: string): Promise<{ requeued: number }> =>
     req(`/jobs/${encodeURIComponent(id)}/retry-failed`, { method: 'POST' }),
+  deleteJob: (id: string, force = false): Promise<null> =>
+    req(`/jobs/${encodeURIComponent(id)}${force ? '?force=true' : ''}`, { method: 'DELETE' }),
+  jobPlaces: (id: string, page = 1, perPage = 20): Promise<PlacesPage> =>
+    req(`/jobs/${encodeURIComponent(id)}/places?page=${page}&per_page=${perPage}`),
+  exportJobURL: (id: string, format: 'json' | 'csv' | 'xlsx'): string =>
+    `${BASE}/jobs/${encodeURIComponent(id)}/export?format=${format}`,
+
+  // Places
+  placeReviews: (placeId: string, limit = 200): Promise<Review[]> =>
+    req(`/places/${encodeURIComponent(placeId)}/reviews?limit=${limit}`),
 
   // Tasks
   tasks: (params: { jobId?: string; status?: string; limit?: number } = {}): Promise<TaskV1[]> => {
@@ -197,4 +266,16 @@ export function fmtTimeAgo(iso?: string | null): string {
   if (diff < 3600) return `${Math.round(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.round(diff / 3600)}h ago`;
   return `${Math.round(diff / 86400)}d ago`;
+}
+
+export function fmtUptime(s: number | null | undefined): string {
+  if (s == null) return '-';
+  const sec = Math.floor(s % 60);
+  const min = Math.floor((s / 60) % 60);
+  const hr = Math.floor((s / 3600) % 24);
+  const d = Math.floor(s / 86400);
+  if (d) return `${d}d ${hr}h`;
+  if (hr) return `${hr}h ${min}m`;
+  if (min) return `${min}m ${sec}s`;
+  return `${sec}s`;
 }

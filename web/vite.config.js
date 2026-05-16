@@ -1,13 +1,8 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import preprocess from 'svelte-preprocess';
 
 export default defineConfig({
-  plugins: [
-    svelte({
-      preprocess: preprocess(),
-    }),
-  ],
+  plugins: [svelte()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -19,6 +14,11 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:8000',
+        ws: true,
         changeOrigin: true,
       },
     },

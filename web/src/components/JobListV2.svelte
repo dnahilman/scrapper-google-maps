@@ -1,14 +1,12 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { v1, type JobV1, fmtTimeAgo } from '../lib/api_v1.ts';
-  import { notify, activeJobsCount } from '../lib/stores.ts';
+  import { notify, activeJobsCount, navigate } from '../lib/stores.ts';
   import { ws } from '../lib/ws.ts';
 
-  let jobs: JobV1[] = [];
-  let loading = true;
-  let error = '';
-  let timer: ReturnType<typeof setInterval> | null = null;
-  let unsubEvents: (() => void) | null = null;
+  let jobs: JobV1[] = $state([]);
+  let loading = $state(true);
+  let error = $state('');
 
   async function refresh(): Promise<void> {
     try {
@@ -44,39 +42,42 @@
     }
   }
 
+  async function deleteJob(id: string): Promise<void> {
+    if (!confirm('Hapus job ini beserta semua task-nya? Data places tetap tersimpan.')) return;
+    try {
+      await v1.deleteJob(id);
+      notify('Job dihapus', 'success');
+      await refresh();
+    } catch (e) {
+      notify(`Delete failed: ${(e as Error).message}`, 'error');
+    }
+  }
+
+  function downloadJob(id: string, format: 'json' | 'csv' | 'xlsx'): void {
+    window.open(v1.exportJobURL(id, format), '_blank');
+  }
+
   function progress(j: JobV1): string {
     if (j.total_tasks === 0) return '0%';
-    const pct = ((j.done_count + j.failed_count) / j.total_tasks) * 100;
-    return `${pct.toFixed(0)}%`;
+    return `${(((j.done_count + j.failed_count) / j.total_tasks) * 100).toFixed(0)}%`;
   }
 
   onMount(() => {
     void refresh();
-    // Cheap fallback polling — WS push will refresh on transitions but we
-    // still want periodic sync in case a message was dropped.
-    timer = setInterval(() => void refresh(), 8_000);
-
-    const wsHandler = (ev: CustomEvent | null): void => {
-      if (!ev) return;
-      const ce = ev as unknown as { type: string };
-      if (['task.completed', 'task.failed', 'task.claimed', 'task.requeued'].includes(ce.type)) {
+    const unsub = ws.events.subscribe((e) => {
+      if (!e) return;
+      if (['task.completed','task.failed','task.claimed','task.requeued','job.updated'].includes(e.type)) {
         void refresh();
       }
-    };
-    const sub = ws.events.subscribe((e) => wsHandler(e as unknown as CustomEvent));
-    unsubEvents = sub;
-  });
-
-  onDestroy(() => {
-    if (timer) clearInterval(timer);
-    if (unsubEvents) unsubEvents();
+    });
+    return () => unsub();
   });
 </script>
 
 <section class="jobs">
   <header>
     <h3>Jobs</h3>
-    <span class="muted">{jobs.length} total · live (WS + 8s poll)</span>
+    <span class="muted">{jobs.length} total · live (WS)</span>
   </header>
 
   {#if loading}
@@ -111,12 +112,23 @@
             </td>
             <td><span class="muted small">{fmtTimeAgo(j.created_at)}</span></td>
             <td class="actions">
+              <button type="button" class="ghost icon-btn small" onclick={() => navigate(`#jobs/${j.id}`)}>Detail</button>
+              <button type="button" class="ghost icon-btn small" onclick={() => navigate(`#jobs/${j.id}?logs`)}>Logs</button>
+              <div class="dropdown">
+                <button type="button" class="ghost icon-btn small">↓ Export</button>
+                <div class="dropdown-menu">
+                  <button type="button" onclick={() => downloadJob(j.id, 'json')}>JSON</button>
+                  <button type="button" onclick={() => downloadJob(j.id, 'csv')}>CSV</button>
+                  <button type="button" onclick={() => downloadJob(j.id, 'xlsx')}>Excel</button>
+                </div>
+              </div>
               {#if j.status === 'running' || j.status === 'pending'}
-                <button type="button" class="ghost icon-btn small" on:click={() => cancel(j.id)}>Cancel</button>
+                <button type="button" class="ghost icon-btn small" onclick={() => cancel(j.id)}>Cancel</button>
               {/if}
               {#if j.failed_count > 0 && j.status !== 'running'}
-                <button type="button" class="ghost icon-btn small" on:click={() => retry(j.id)}>Retry failed</button>
+                <button type="button" class="ghost icon-btn small" onclick={() => retry(j.id)}>Retry</button>
               {/if}
+              <button type="button" class="ghost icon-btn small danger" onclick={() => deleteJob(j.id)}>Hapus</button>
             </td>
           </tr>
         {/each}
@@ -126,30 +138,46 @@
 </section>
 
 <style>
-  .jobs > header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-  }
+  .jobs > header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem; }
   .jobs > header h3 { margin: 0; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
   th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color, #2a2c33); vertical-align: top; }
   th { font-weight: 600; color: var(--pico-muted-color, #888); }
   .small { font-size: 0.85em; }
-  .actions { display: flex; gap: 0.4rem; justify-content: flex-end; }
-  .badge {
-    font-size: 0.75em;
-    text-transform: uppercase;
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    background: var(--pico-secondary-background, rgba(255, 255, 255, 0.06));
-  }
+  .actions { display: flex; gap: 0.3rem; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+  .badge { font-size: 0.75em; text-transform: uppercase; padding: 0.15rem 0.5rem; border-radius: 999px; background: var(--pico-secondary-background, rgba(255,255,255,.06)); }
   .status-running, .status-pending { color: #3b82f6; }
   .status-completed { color: #22c55e; }
   .status-failed, .status-cancelled { color: #ef4444; }
   .progress-bar { height: 4px; background: var(--pico-secondary-background, rgba(255,255,255,.08)); border-radius: 2px; margin-top: 4px; overflow: hidden; }
   .progress-fill { height: 100%; background: #3b82f6; transition: width .3s ease; }
+  .danger { color: var(--pico-color-red-550, #c0392b); }
   .error { color: var(--pico-color-red-550, #c0392b); }
+
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: var(--pico-card-background-color, #1a1b22);
+    border: 1px solid var(--pico-muted-border-color, #2a2c33);
+    border-radius: 6px;
+    z-index: 10;
+    min-width: 80px;
+    padding: 0.25rem 0;
+  }
+  .dropdown:hover .dropdown-menu { display: block; }
+  .dropdown-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--pico-color);
+  }
+  .dropdown-menu button:hover { background: var(--pico-secondary-background, rgba(255,255,255,.06)); }
 </style>

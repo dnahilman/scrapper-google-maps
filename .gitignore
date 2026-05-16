@@ -1,12 +1,7 @@
-__pycache__/
-*.pyc
-*.pyo
-.venv/
-venv/
-.env
-.env.local
 *.db
 *.db-journal
+deploy/.env
+deploy/.env.local
 data/output/
 data/output-from-vps/
 # Per-keyword output dirs (e.g. data/cafe/, data/barbershop/) — keluarahan_bandung.json tetap tracked

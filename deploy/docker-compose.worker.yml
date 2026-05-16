@@ -6,6 +6,7 @@ name: scrapper-worker
 services:
   worker:
     image: ghcr.io/dnahilman/scrapper-worker:${TAG:-latest}
+    pull_policy: missing
     restart: unless-stopped
     environment:
       MASTER_URL: ${MASTER_URL:?required}

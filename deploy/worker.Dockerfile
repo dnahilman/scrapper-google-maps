@@ -4,9 +4,9 @@
 FROM golang:1.26.3-alpine AS build
 WORKDIR /src
 RUN apk add --no-cache git
-COPY go.mod go.sum* ./
+COPY server/go.mod server/go.sum* ./
 RUN go mod download || true
-COPY . .
+COPY server/ .
 RUN CGO_ENABLED=0 GOOS=linux \
     go build -ldflags="-s -w" -o /out/worker ./cmd/worker
 

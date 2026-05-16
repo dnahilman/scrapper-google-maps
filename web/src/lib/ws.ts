@@ -1,6 +1,3 @@
-// WebSocket store: subscribes to /ws on the master and exposes a typed event stream.
-// Phase 1: stub that auto-reconnects. Phase 4 will wire real-time events.
-
 import { writable, type Readable } from 'svelte/store';
 
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error';
@@ -11,11 +8,31 @@ export interface WSEvent {
   at: string;
 }
 
+export interface LogEntry {
+  level: string;
+  time: string;
+  message: string;
+  fields?: Record<string, unknown>;
+}
+
+interface PlaceScrapedPayload {
+  task_id?: string;
+  place_id?: string;
+  title?: string;
+  kelurahan_name?: string;
+  kecamatan_name?: string;
+  city_name?: string;
+  index?: number;
+  total?: number;
+}
+
 interface WSStore extends Readable<WSStatus> {
   events: Readable<WSEvent | null>;
+  logEvents: Readable<LogEntry[]>;
   connect(): void;
   disconnect(): void;
   send(payload: unknown): void;
+  clearLogs(): void;
 }
 
 function buildWSURL(): string {
@@ -26,6 +43,7 @@ function buildWSURL(): string {
 export function createWS(): WSStore {
   const status = writable<WSStatus>('closed');
   const events = writable<WSEvent | null>(null);
+  const logEvents = writable<LogEntry[]>([]);
 
   let socket: WebSocket | null = null;
   let reconnectAttempts = 0;
@@ -43,7 +61,7 @@ export function createWS(): WSStore {
     status.set('connecting');
     try {
       socket = new WebSocket(buildWSURL());
-    } catch (err) {
+    } catch {
       status.set('error');
       scheduleReconnect();
       return;
@@ -58,6 +76,25 @@ export function createWS(): WSStore {
       try {
         const data = JSON.parse(ev.data) as WSEvent;
         events.set(data);
+        if (data.type === 'log') {
+          const entry = data.payload as LogEntry;
+          logEvents.update((prev) => [...prev.slice(-2000), entry]);
+        } else if (data.type === 'place.scraped') {
+          const p = data.payload as PlaceScrapedPayload;
+          const parts = [p.kelurahan_name, p.kecamatan_name].filter(Boolean).join(', ');
+          logEvents.update((prev) => [
+            ...prev.slice(-2000),
+            {
+              level: 'info',
+              time: data.at,
+              message: `✓ ${p.title ?? p.place_id ?? '?'}`,
+              fields: {
+                ...(parts ? { lokasi: parts } : {}),
+                ...(p.index != null && p.total != null ? { progress: `${p.index}/${p.total}` } : {}),
+              },
+            },
+          ]);
+        }
       } catch {
         // Ignore malformed payloads.
       }
@@ -89,12 +126,18 @@ export function createWS(): WSStore {
     }
   }
 
+  function clearLogs() {
+    logEvents.set([]);
+  }
+
   return {
     subscribe: status.subscribe,
     events: { subscribe: events.subscribe },
+    logEvents: { subscribe: logEvents.subscribe },
     connect,
     disconnect,
     send,
+    clearLogs,
   };
 }
 

@@ -1,17 +1,30 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
   import { v1, type City } from '../lib/api_v1.ts';
   import { notify } from '../lib/stores.ts';
 
-  export let selectedCityId: string = '';
-  export let preferredSlug: string = 'bandung';
+  interface Props {
+    selectedCityId?: string;
+    preferredSlug?: string;
+    onSelect?: (city: City) => void;
+  }
+  let { selectedCityId = $bindable(''), preferredSlug = 'bandung', onSelect }: Props = $props();
 
-  const dispatch = createEventDispatcher<{ select: City }>();
+  let cities: City[] = $state([]);
+  let loading = $state(true);
+  let syncing = $state(false);
+  let error = $state('');
+  let search = $state('');
 
-  let cities: City[] = [];
-  let loading = true;
-  let syncing = false;
-  let error = '';
+  let filtered = $derived(
+    search.trim()
+      ? cities.filter((c) =>
+          (c.name + ' ' + c.province_name).toLowerCase().includes(search.toLowerCase())
+        )
+      : cities
+  );
+
+  let showDropdown = $state(false);
+  let selectedCity = $derived(cities.find((c) => c.id === selectedCityId) ?? null);
 
   async function load(): Promise<void> {
     loading = true;
@@ -22,7 +35,7 @@
         const preferred = cities.find((c) => c.slug === preferredSlug);
         if (preferred) {
           selectedCityId = preferred.id;
-          dispatch('select', preferred);
+          onSelect?.(preferred);
         }
       }
     } catch (e) {
@@ -37,7 +50,7 @@
     syncing = true;
     try {
       const res = await v1.syncCities();
-      notify(`Synced ${res.synced} cities from emsifa`, 'success');
+      notify(`Synced ${res.synced} cities`, 'success');
       await load();
     } catch (e) {
       notify(`Sync failed: ${(e as Error).message}`, 'error');
@@ -46,34 +59,44 @@
     }
   }
 
-  function handleChange(ev: Event): void {
-    const id = (ev.target as HTMLSelectElement).value;
-    selectedCityId = id;
-    const found = cities.find((c) => c.id === id);
-    if (found) dispatch('select', found);
+  function selectCity(city: City): void {
+    selectedCityId = city.id;
+    search = '';
+    showDropdown = false;
+    onSelect?.(city);
   }
 
-  onMount(load);
+  $effect(() => { load(); });
 </script>
 
 <div class="city-selector">
   <label>
     Kota
-    <select disabled={loading} value={selectedCityId} on:change={handleChange}>
-      {#if loading}
-        <option value="">Loading…</option>
-      {:else if cities.length === 0}
-        <option value="">No cities — click Sync</option>
-      {:else}
-        <option value="" disabled>Pilih kota…</option>
-        {#each cities as c (c.id)}
-          <option value={c.id}>{c.name} — {c.province_name}</option>
-        {/each}
+    <div class="combo-wrap">
+      <input
+        type="text"
+        placeholder={loading ? 'Loading…' : (selectedCity ? selectedCity.name + ' — ' + selectedCity.province_name : 'Cari kota…')}
+        bind:value={search}
+        onfocus={() => (showDropdown = true)}
+        onblur={() => setTimeout(() => (showDropdown = false), 150)}
+        disabled={loading}
+        autocomplete="off"
+      />
+      {#if showDropdown && filtered.length > 0}
+        <ul class="dropdown">
+          {#each filtered.slice(0, 20) as c (c.id)}
+            <li>
+              <button type="button" onmousedown={() => selectCity(c)}>
+                {c.name} <span class="muted small">— {c.province_name}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
       {/if}
-    </select>
+    </div>
   </label>
-  <button type="button" class="ghost icon-btn sync-btn" on:click={sync} disabled={syncing || loading}>
-    {syncing ? 'Syncing…' : '↻ Sync cities'}
+  <button type="button" class="ghost icon-btn sync-btn" onclick={sync} disabled={syncing || loading}>
+    {syncing ? 'Syncing…' : '↻ Sync'}
   </button>
   {#if error}
     <p class="error">⚠ {error}</p>
@@ -81,19 +104,29 @@
 </div>
 
 <style>
-  .city-selector {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.5rem;
-    align-items: end;
+  .city-selector { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: end; }
+  .combo-wrap { position: relative; }
+  .combo-wrap input { width: 100%; }
+  .dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--pico-card-background-color, #1a1b22);
+    border: 1px solid var(--pico-muted-border-color, #2a2c33);
+    border-radius: 6px;
+    z-index: 20;
+    max-height: 260px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0.25rem 0;
+    margin: 0;
   }
-  .sync-btn {
-    white-space: nowrap;
-  }
-  .error {
-    grid-column: 1 / -1;
-    color: var(--pico-color-red-550, #c0392b);
-    margin: 0.25rem 0 0;
-    font-size: 0.85em;
-  }
+  .dropdown li { margin: 0; }
+  .dropdown button { display: block; width: 100%; text-align: left; padding: 0.35rem 0.75rem; background: none; border: none; cursor: pointer; color: var(--pico-color); font-size: 0.9em; }
+  .dropdown button:hover { background: var(--pico-secondary-background, rgba(255,255,255,.06)); }
+  .sync-btn { white-space: nowrap; }
+  .error { grid-column: 1 / -1; color: var(--pico-color-red-550, #c0392b); margin: 0.25rem 0 0; font-size: 0.85em; }
+  .small { font-size: 0.85em; }
+  .muted { color: var(--pico-muted-color, #888); }
 </style>

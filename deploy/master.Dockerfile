@@ -12,9 +12,9 @@ RUN npm run build
 FROM golang:1.26.3-alpine AS build
 WORKDIR /src
 RUN apk add --no-cache git ca-certificates
-COPY go.mod go.sum* ./
+COPY server/go.mod server/go.sum* ./
 RUN go mod download || true
-COPY . .
+COPY server/ .
 ARG VERSION=dev
 RUN CGO_ENABLED=0 GOOS=linux \
     go build -ldflags="-s -w -X github.com/dnahilman/scrapper-go/internal/version.Version=${VERSION}" \
@@ -25,7 +25,7 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 COPY --from=build /out/master /app/master
 COPY --from=ui /ui/dist /app/web/dist
-COPY migrations /app/migrations
+COPY server/migrations /app/migrations
 USER nonroot:nonroot
 EXPOSE 8080
 ENTRYPOINT ["/app/master"]
